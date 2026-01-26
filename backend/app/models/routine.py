@@ -12,7 +12,7 @@ class Routine(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str
     description: str | None = None
-    starTime: time
+    startTime: time
     endTime: time
 
     activity: "Activity" = Relationship(back_populates="routines")
