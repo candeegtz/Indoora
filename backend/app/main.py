@@ -1,6 +1,7 @@
+from Indoora.backend.app.routers import device_router, user_router
 from fastapi import FastAPI
 from app.database import create_db_and_tables
-from app.routers import auth, users, routines, devices
+from app.routers import auth, routines
 
 app = FastAPI(
     title="Indoora  Backend",
@@ -12,9 +13,9 @@ def on_startup():
     create_db_and_tables()
 
 # app.include_router(auth.router)
-app.include_router(users.router)
+app.include_router(user_router.router)
 app.include_router(routines.router)
-app.include_router(devices.router)
+app.include_router(device_router.router)
 
 @app.get("/")
 def root():
