@@ -71,8 +71,8 @@ class RoutineRepository:
     def get_all_dayroutines(self) -> list[DayRoutine]:
         return self.session.exec(select(DayRoutine)).all()
     
-    def update_dayroutine(self, data: DayRoutineUpdate) -> DayRoutine:
-        dayroutine = self.get_dayroutine_by_id(data.id)
+    def update_dayroutine(self, dayroutine_id: int, data: DayRoutineUpdate) -> DayRoutine:
+        dayroutine = self.get_dayroutine_by_id(dayroutine_id)
         if not dayroutine:
             raise ValueError("DayRoutine not found")
         
