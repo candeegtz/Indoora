@@ -1,5 +1,5 @@
-from Indoora.backend.app.models.home import Home, Position, Room
-from Indoora.backend.app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate
+from Indoora.backend.app.models.home import Home, Position, Room, Activity
+from Indoora.backend.app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
 from sqlmodel import Session, select
 
 class HomeRepository:
@@ -53,6 +53,7 @@ class HomeRepository:
     def create_room(self, data: RoomCreate) -> Room:
         room = Room(
             name = data.name,
+            roomType = data.roomType,
             home_id = data.home_id
         )
 
@@ -110,7 +111,7 @@ class HomeRepository:
         return self.session.exec(select(Position)).all()
     
     def update_position(self, position_id: int, data: PositionCreate) -> PositionCreate:
-        position = self.get_room_by_id(position_id)
+        position = self.get_position_by_id(position_id)
         if not position:
             raise ValueError("Position not found")
         
@@ -130,3 +131,41 @@ class HomeRepository:
         
         self.session.delete(position)
         self.session.commit()   
+
+
+    # ------------Activity------------
+
+    def create_activity(self, data: ActivityCreate) -> Activity:
+        activity = Activity(name=data.name)
+        self.session.add(activity)
+        self.session.commit()
+        self.session.refresh(activity)
+        return activity
+
+    def get_activity_by_id(self, activity_id: int) -> Activity | None:
+        return self.session.get(Activity, activity_id)
+
+    def get_all_activities(self) -> list[Activity]:
+        return self.session.exec(select(Activity)).all()
+
+    def update_activity(self, activity_id: int, data: ActivityUpdate) -> Activity:
+        activity = self.get_activity_by_id(activity_id)
+        if not activity:
+            raise ValueError("Activity not found")
+
+        update_data = data.dict(exclude_unset=True)
+
+        for key, value in update_data.items():
+            setattr(activity, key, value)
+
+        self.session.commit()
+        self.session.refresh(activity)
+        return activity
+
+    def delete_activity(self, activity_id: int):
+        activity = self.get_activity_by_id(activity_id)
+        if not activity:
+            raise ValueError("Activity not found")
+
+        self.session.delete(activity)
+        self.session.commit()

@@ -23,6 +23,7 @@ class Home(SQLModel, table=True):
 
 class Room(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    name: str 
     roomType: RoomType
     home_id: int = Field(foreign_key="home.id")
     

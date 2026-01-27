@@ -28,6 +28,7 @@ class HomeRead(HomeBase):
 # ------------Room------------
 
 class RoomBase(SQLModel):
+    name: str
     roomType: RoomType
     home_id: int
 
@@ -37,6 +38,7 @@ class RoomCreate(RoomBase):
 
 
 class RoomUpdate(SQLModel):
+    name: Optional[str] = None
     roomType: Optional[RoomType] = None
     home_id: Optional[int] = None
 
@@ -63,4 +65,18 @@ class PositionUpdate(SQLModel):
 
 
 class PositionRead(PositionBase):
+    id: int
+
+
+# ------------Activity------------
+class ActivityBase(SQLModel): 
+    name: str 
+    
+class ActivityCreate(ActivityBase): 
+    pass 
+
+class ActivityUpdate(SQLModel): 
+    name: Optional[str] = None 
+    
+class ActivityRead(ActivityBase): 
     id: int
