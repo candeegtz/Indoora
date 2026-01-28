@@ -52,5 +52,7 @@ class UserRepository:
         self.session.delete(user)
         self.session.commit()
 
+    def get_user_by_email(self, email: str) -> User | None:
+        return self.session.exec(select(User).where(User.email == email)).first()
 
     # Eliminar user, eliminar HOME y todo lo relacionado?
