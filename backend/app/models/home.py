@@ -1,12 +1,8 @@
-from __future__ import annotations
 import enum
+from typing import List
+from Indoora.backend.app.models.device import ReceptorDevice
+from Indoora.backend.app.models.user import User
 from sqlmodel import SQLModel, Field, Relationship
-
-class Home(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    name: str
-    owner_id: int = Field(foreign_key="user.id")
-    rooms: list[Room] = Relationship(back_populates="home")
 
 class RoomType(str, enum.Enum):
     KITCHEN = "KITCHEN"
@@ -15,23 +11,44 @@ class RoomType(str, enum.Enum):
     BATHROOM = "BATHROOM"
     OTHER = "OTHER"
 
+class Home(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    subject_id: int | None = Field(foreign_key="user.id")
+
+    subject: "User" = Relationship(back_populates="home_as_subject")
+    supervisors: List["User"] = Relationship(back_populates="home_as_supervisor")
+
+    rooms: list["Room"] = Relationship(back_populates="home")
+
 class Room(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    name: str 
     roomType: RoomType
     home_id: int = Field(foreign_key="home.id")
-    home: Home = Relationship(back_populates="rooms")
-    positions: list[Position] = Relationship(back_populates="rooms")
-
-class Activity(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    name: str
-    positions: list[Position] = Relationship(back_populates="activities", link_model=ActivityPosition)
-
-class Position(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    name: str
-    activities: list[Activity] = Relationship(back_populates="positions", link_model=ActivityPosition)
+    
+    device: "ReceptorDevice" = Relationship(back_populates="room", sa_relationship_kwargs={"uselist": False})
+    home: "Home" = Relationship(back_populates="rooms")
+    positions: list["Position"] = Relationship(back_populates="room")
 
 class ActivityPosition(SQLModel, table=True):
     activity_id: int = Field(foreign_key="activity.id", primary_key=True)
     position_id: int = Field(foreign_key="position.id", primary_key=True)
+
+class Activity(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    name: str
+
+    positions: list["Position"] = Relationship(
+        back_populates="activities", 
+        link_model=ActivityPosition)
+
+class Position(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    name: str
+    room_id: int = Field(foreign_key="room.id")
+
+    room: "Room" = Relationship(back_populates="positions")
+    activities: list["Activity"] = Relationship(
+        back_populates="positions", 
+        link_model=ActivityPosition)

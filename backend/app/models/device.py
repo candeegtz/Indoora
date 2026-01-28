@@ -5,15 +5,21 @@ from sqlmodel import SQLModel, Field, Relationship
 from Indoora.backend.app.models.home import Room
 from Indoora.backend.app.models.user import User
 
-# Dispositivos ESP32
-class EmisorDevice(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    macAddress: str
-    room: Room = Relationship(back_populates="devices")
 
 # Pulsera bluetooth receptora
-class ReceptorDevice(SQLModel, table=True):
+class EmisorDevice(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str
     macAddress: str
-    user: User = Relationship(back_populates="devices")
+
+    user_id: int = Field(foreign_key="user.id")
+    user: "User" = Relationship(back_populates="devices")
+    #nombre para una identificacion  más sencilla a la hora de la configuración
+
+# Dispositivos ESP32
+class ReceptorDevice(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    macAddress: str
+
+    room_id: int = Field(foreign_key="room.id", unique=True)
+    room: "Room" = Relationship(back_populates="devices")
