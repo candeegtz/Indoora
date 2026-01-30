@@ -1,9 +1,9 @@
 from fastapi import HTTPException
 from sqlmodel import Session
 
-from Indoora.backend.app.repositories.user_repository import UserRepository
-from Indoora.backend.app.schemas.user import UserCreate, UserUpdate
-from Indoora.backend.app.core.security import hash_password, verify_password
+from app.repositories.user_repository import UserRepository
+from app.schemas.user import UserCreate, UserUpdate
+from app.core.security import hash_password, verify_password
 
 
 class UserService:

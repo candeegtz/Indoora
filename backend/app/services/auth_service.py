@@ -1,14 +1,14 @@
-from Indoora.backend.app.models.user import UserType
+from app.models.user import UserType
 from fastapi import HTTPException
 from sqlmodel import Session
-from Indoora.backend.app.core.security import (
+from app.core.security import (
     verify_password,
     create_access_token,
     create_refresh_token,
     REFRESH_TOKEN_EXPIRE_DAYS_DEFAULT,
     REFRESH_TOKEN_EXPIRE_DAYS_SUBJECT,
 )
-from Indoora.backend.app.repositories.user_repository import UserRepository
+from app.repositories.user_repository import UserRepository
 
 class AuthService:
     def __init__(self, session: Session):

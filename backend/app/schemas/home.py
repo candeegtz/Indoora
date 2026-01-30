@@ -1,7 +1,7 @@
 from __future__ import annotations
 from sqlmodel import SQLModel
 from typing import Optional, List
-from Indoora.backend.app.models.home import RoomType
+from app.models.home import RoomType
 
 
 

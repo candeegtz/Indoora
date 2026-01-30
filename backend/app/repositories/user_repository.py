@@ -1,7 +1,7 @@
-from Indoora.backend.app.schemas.user import UserCreate, UserUpdate
+from app.schemas.user import UserCreate, UserUpdate
 from sqlmodel import Session, select
 from app.models.user import User
-from Indoora.backend.app.core.security import hash_password
+from app.core.security import hash_password
 
 class UserRepository:
     def __init__(self, session: Session):

@@ -1,8 +1,8 @@
 from sqlmodel import Session
 from fastapi import HTTPException
 
-from Indoora.backend.app.repositories.home_repository import HomeRepository
-from Indoora.backend.app.schemas.home import (
+from app.repositories.home_repository import HomeRepository
+from app.schemas.home import (
     HomeCreate, HomeUpdate,
     RoomCreate, RoomUpdate,
     PositionCreate, PositionUpdate,

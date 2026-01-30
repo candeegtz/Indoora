@@ -1,13 +1,13 @@
-from Indoora.backend.app.services.home_service import HomeService
+from app.services.home_service import HomeService
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
-from Indoora.backend.app.database import get_session
-from Indoora.backend.app.schemas.home import (
+from app.database import get_session
+from app.schemas.home import (
     HomeCreate, HomeUpdate, HomeRead,
     RoomCreate, RoomUpdate, RoomRead,
     PositionCreate, PositionUpdate, PositionRead
 )
-from Indoora.backend.app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/homes", tags=["Homes"])
 
