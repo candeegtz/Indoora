@@ -1,7 +1,7 @@
 from __future__ import annotations
 from sqlmodel import SQLModel
 from typing import Optional
-from Indoora.backend.app.models.user import UserType
+from app.models.user import UserType
 
 
 class UserBase(SQLModel):

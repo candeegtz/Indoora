@@ -2,8 +2,8 @@ from __future__ import annotations
 import enum
 from sqlmodel import SQLModel, Field, Relationship
 
-from Indoora.backend.app.models.home import Room
-from Indoora.backend.app.models.user import User
+from app.models.home import Room
+from app.models.user import User
 
 
 # Pulsera bluetooth receptora

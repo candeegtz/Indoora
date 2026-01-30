@@ -1,5 +1,5 @@
-from Indoora.backend.app.models.home import Home, Position, Room, Activity
-from Indoora.backend.app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
+from app.models.home import Home, Position, Room, Activity
+from app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
 from sqlmodel import Session, select
 
 class HomeRepository:

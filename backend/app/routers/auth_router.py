@@ -1,12 +1,12 @@
-from Indoora.backend.app.models.user import UserType
-from Indoora.backend.app.schemas.user import UserCreate, UserRead
-from Indoora.backend.app.services.user_service import UserService
+from app.models.user import UserType
+from app.schemas.user import UserCreate, UserRead
+from app.services.user_service import UserService
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
-from Indoora.backend.app.database import get_session
-from Indoora.backend.app.services.auth_service import AuthService
-from Indoora.backend.app.dependencies.auth import get_current_user
+from app.database import get_session
+from app.services.auth_service import AuthService
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 

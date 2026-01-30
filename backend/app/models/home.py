@@ -1,7 +1,7 @@
 import enum
 from typing import List
-from Indoora.backend.app.models.device import ReceptorDevice
-from Indoora.backend.app.models.user import User
+from app.models.device import ReceptorDevice
+from app.models.user import User
 from sqlmodel import SQLModel, Field, Relationship
 
 class RoomType(str, enum.Enum):

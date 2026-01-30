@@ -2,7 +2,7 @@ import enum
 from datetime import time
 from sqlmodel import SQLModel, Field, Relationship
 
-from Indoora.backend.app.models.home import Activity
+from app.models.home import Activity
 
 class DayRoutineLink(SQLModel, table=True):
     routine_id: int = Field(foreign_key="routine.id", primary_key=True)
