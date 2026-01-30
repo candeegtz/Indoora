@@ -1,11 +1,11 @@
-from Indoora.backend.app.services.routine_service import RoutineService
+from app.services.routine_service import RoutineService
 from fastapi import APIRouter, Depends, HTTPException 
 from sqlmodel import Session 
-from Indoora.backend.app.database import get_session 
-from Indoora.backend.app.schemas.routine import (
+from app.database import get_session 
+from app.schemas.routine import (
     DayRoutineCreate, DayRoutineUpdate, DayRoutineRead
 )
-from Indoora.backend.app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/dayroutines", tags=["DayRoutines"])
 

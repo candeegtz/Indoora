@@ -1,11 +1,11 @@
 from fastapi import HTTPException
 from sqlmodel import Session
 
-from Indoora.backend.app.repositories.device_repository import DeviceRepository
-from Indoora.backend.app.repositories.home_repository import HomeRepository
-from Indoora.backend.app.repositories.user_repository import UserRepository
+from app.repositories.device_repository import DeviceRepository
+from app.repositories.home_repository import HomeRepository
+from app.repositories.user_repository import UserRepository
 
-from Indoora.backend.app.schemas.device import (
+from app.schemas.device import (
     EmisorDeviceCreate, EmisorDeviceUpdate,
     ReceptorDeviceCreate, ReceptorDeviceUpdate
 )

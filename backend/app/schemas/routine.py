@@ -2,7 +2,7 @@ from __future__ import annotations
 from sqlmodel import SQLModel
 from typing import Optional, List
 from datetime import time
-from Indoora.backend.app.models.routine import DaysOfWeek
+from app.models.routine import DaysOfWeek
 
 
 # ------------DayRoutine------------

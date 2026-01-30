@@ -1,11 +1,10 @@
 from fastapi import HTTPException
 from sqlmodel import Session
 
-from Indoora.backend.app.repositories.routine_repository import RoutineRepository
-from Indoora.backend.app.repositories.home_repository import HomeRepository
-from Indoora.backend.app.repositories.activity_repository import ActivityRepository
+from app.repositories.routine_repository import RoutineRepository
+from app.repositories.home_repository import HomeRepository
 
-from Indoora.backend.app.schemas.routine import (
+from app.schemas.routine import (
     RoutineCreate, RoutineUpdate,
     DayRoutineCreate, DayRoutineUpdate
 )
@@ -15,7 +14,6 @@ class RoutineService:
     def __init__(self, session: Session):
         self.repo = RoutineRepository(session)
         self.home_repo = HomeRepository(session)
-        self.activity_repo = ActivityRepository(session)
 
 
     # ------------Routine------------

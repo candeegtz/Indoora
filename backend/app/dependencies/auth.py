@@ -2,9 +2,9 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
-from Indoora.backend.app.core.security import decode_token
-from Indoora.backend.app.database import get_session
-from Indoora.backend.app.repositories.user_repository import UserRepository
+from app.core.security import decode_token
+from app.database import get_session
+from app.repositories.user_repository import UserRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 

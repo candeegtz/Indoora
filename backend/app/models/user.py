@@ -1,7 +1,5 @@
 import enum
 from typing import List
-from Indoora.backend.app.models.device import EmisorDevice
-from Indoora.backend.app.models.home import Home
 from sqlmodel import SQLModel, Field, Relationship
 
 class UserType(str, enum.Enum):
@@ -18,7 +16,16 @@ class User(SQLModel, table=True):
     password_hash: str
     userType: UserType
 
-    device: "EmisorDevice" = Relationship(back_populates="user", sa_relationship_kwargs={"uselist": False})
+    # Relaciones SIN imports directos
+    device: "EmisorDevice" = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"uselist": False}
+    )
+
     home_as_subject: "Home" = Relationship(back_populates="subject")
-    home_as_supervisor_id: int | None = Field(foreign_key="home.id", unique=True)
+
+    home_as_supervisor_id: int | None = Field(
+        foreign_key="home.id",
+        unique=True
+    )
     home_as_supervisor: "Home" = Relationship(back_populates="supervisors")
