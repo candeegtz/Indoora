@@ -1,4 +1,34 @@
+# --- PYTHON / FASTAPI ---
 venv/
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
 *.db
+*.sqlite3
 .env
+.env.*
+
+# --- ANDROID / GRADLE ---
+*.iml
+.gradle/
+local.properties
+.idea/
+build/
+captures/
+*.apk
+*.aab
+
+# --- JAVA / KOTLIN ---
+*.class
+*.jar
+*.war
+*.ear
+
+# --- LOGS ---
+*.log
+
+# --- OS / EDITOR ---
+.DS_Store
+Thumbs.db
+.vscode/
