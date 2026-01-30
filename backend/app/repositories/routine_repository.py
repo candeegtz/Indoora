@@ -1,4 +1,4 @@
-from Indoora.backend.app.schemas.routine import DayRoutineCreate, DayRoutineUpdate, RoutineCreate, RoutineUpdate
+from app.schemas.routine import DayRoutineCreate, DayRoutineUpdate, RoutineCreate, RoutineUpdate
 from sqlmodel import Session, select
 from app.models.routine import DayRoutine, Routine
 

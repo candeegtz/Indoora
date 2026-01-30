@@ -1,8 +1,7 @@
 import enum
 from typing import List
-from app.models.device import ReceptorDevice
-from app.models.user import User
 from sqlmodel import SQLModel, Field, Relationship
+from app.models.user import User
 
 class RoomType(str, enum.Enum):
     KITCHEN = "KITCHEN"
@@ -23,11 +22,14 @@ class Home(SQLModel, table=True):
 
 class Room(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    name: str 
+    name: str
     roomType: RoomType
     home_id: int = Field(foreign_key="home.id")
-    
-    device: "ReceptorDevice" = Relationship(back_populates="room", sa_relationship_kwargs={"uselist": False})
+
+    device: "ReceptorDevice" = Relationship(
+        back_populates="room",
+        sa_relationship_kwargs={"uselist": False}
+    )
     home: "Home" = Relationship(back_populates="rooms")
     positions: list["Position"] = Relationship(back_populates="room")
 
@@ -40,8 +42,9 @@ class Activity(SQLModel, table=True):
     name: str
 
     positions: list["Position"] = Relationship(
-        back_populates="activities", 
-        link_model=ActivityPosition)
+        back_populates="activities",
+        link_model=ActivityPosition
+    )
 
 class Position(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
@@ -50,5 +53,6 @@ class Position(SQLModel, table=True):
 
     room: "Room" = Relationship(back_populates="positions")
     activities: list["Activity"] = Relationship(
-        back_populates="positions", 
-        link_model=ActivityPosition)
+        back_populates="positions",
+        link_model=ActivityPosition
+    )

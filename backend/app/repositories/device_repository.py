@@ -1,4 +1,4 @@
-from Indoora.backend.app.schemas.device import EmisorDeviceCreate, EmisorDeviceUpdate, ReceptorDeviceCreate
+from app.schemas.device import EmisorDeviceCreate, EmisorDeviceUpdate, ReceptorDeviceCreate, ReceptorDeviceUpdate
 from sqlmodel import Session, select
 from app.models.device import EmisorDevice, ReceptorDevice
 
