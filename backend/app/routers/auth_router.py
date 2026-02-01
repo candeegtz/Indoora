@@ -7,14 +7,14 @@ from sqlmodel import Session
 from app.database import get_session
 from app.services.auth_service import AuthService
 from app.dependencies.auth import get_current_user
+from app.schemas.auth import LoginRequest
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-
 @router.post("/login")
-def login(email: str, password: str, session: Session = Depends(get_session)):
+def login(data: LoginRequest, session: Session = Depends(get_session)):
     service = AuthService(session)
-    return service.login(email, password)
+    return service.login(data.email, data.password)
 
 
 @router.post("/refresh")
