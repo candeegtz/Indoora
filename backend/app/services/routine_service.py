@@ -5,8 +5,7 @@ from app.repositories.routine_repository import RoutineRepository
 from app.repositories.home_repository import HomeRepository
 
 from app.schemas.routine import (
-    RoutineCreate, RoutineUpdate,
-    DayRoutineCreate, DayRoutineUpdate
+    RoutineCreate, RoutineUpdate
 )
 
 
@@ -67,51 +66,3 @@ class RoutineService:
             raise HTTPException(404, "Routine not found")
 
         self.repo.delete_routine(routine_id)
-
-
-    # ------------DayRoutine------------
-
-    def create_dayroutine(self, data: DayRoutineCreate):
-        # home debe existir
-        home = self.home_repo.get_home_by_id(data.home_id)
-        if not home:
-            raise HTTPException(404, "Home not found")
-
-        # day debe estar entre 1 y 7
-        if not (1 <= data.day <= 7):
-            raise HTTPException(400, "Day must be between 1 and 7")
-
-        return self.repo.create_dayroutine(data)
-
-    def get_dayroutine(self, dayroutine_id: int):
-        dr = self.repo.get_dayroutine_by_id(dayroutine_id)
-        if not dr:
-            raise HTTPException(404, "DayRoutine not found")
-        return dr
-
-    def get_all_dayroutines(self):
-        return self.repo.get_all_dayroutines()
-
-    def update_dayroutine(self, dayroutine_id: int, data: DayRoutineUpdate):
-        dr = self.repo.get_dayroutine_by_id(dayroutine_id)
-        if not dr:
-            raise HTTPException(404, "DayRoutine not found")
-
-        # home si se actualiza
-        if data.home_id:
-            home = self.home_repo.get_home_by_id(data.home_id)
-            if not home:
-                raise HTTPException(404, "Home not found")
-
-        # day si se actualiza
-        if data.day and not (1 <= data.day <= 7):
-            raise HTTPException(400, "Day must be between 1 and 7")
-
-        return self.repo.update_dayroutine(dayroutine_id, data)
-
-    def delete_dayroutine(self, dayroutine_id: int):
-        dr = self.repo.get_dayroutine_by_id(dayroutine_id)
-        if not dr:
-            raise HTTPException(404, "DayRoutine not found")
-
-        self.repo.delete_dayroutine(dayroutine_id)

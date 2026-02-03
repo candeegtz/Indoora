@@ -1,4 +1,4 @@
-from app.models.user import UserType
+from app.models.models import UserType
 from app.schemas.user import UserCreate, UserRead
 from app.services.user_service import UserService
 from fastapi import APIRouter, Depends, HTTPException

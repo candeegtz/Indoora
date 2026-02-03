@@ -1,13 +1,14 @@
 from app.schemas.user import UserCreate, UserUpdate
 from sqlmodel import Session, select
-from app.models.user import User
+from app.models.models import User
 from app.core.security import hash_password
+
 
 class UserRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, data: UserCreate) -> User:
+    def create_user(self, data: UserCreate) -> User:
         user = User(
             username = data.username,
             name = data.name,

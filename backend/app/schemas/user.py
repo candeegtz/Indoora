@@ -1,7 +1,7 @@
 from __future__ import annotations
 from sqlmodel import SQLModel
 from typing import Optional
-from app.models.user import UserType
+from app.models.models import UserType
 
 
 class UserBase(SQLModel):

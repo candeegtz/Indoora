@@ -1,4 +1,4 @@
-from app.models.user import UserType
+from app.models.models import UserType
 from fastapi import HTTPException
 from sqlmodel import Session
 from app.core.security import (

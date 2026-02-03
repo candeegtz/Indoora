@@ -1,6 +1,7 @@
 from app.schemas.device import EmisorDeviceCreate, EmisorDeviceUpdate, ReceptorDeviceCreate, ReceptorDeviceUpdate
 from sqlmodel import Session, select
-from app.models.device import EmisorDevice, ReceptorDevice
+from app.models.models import EmisorDevice, ReceptorDevice
+
 
 class DeviceRepository:
     def __init__(self, session: Session):
@@ -74,7 +75,7 @@ class DeviceRepository:
         if not device:
             raise ValueError("ReceptorDevice not found")    
         
-        updated_data = data.dict(exclude_unset=True)
+        updated_data = device.dict(exclude_unset=True)
 
         for key, value in updated_data.items():
             setattr(device, key, value)

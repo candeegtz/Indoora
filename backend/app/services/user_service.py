@@ -73,3 +73,7 @@ class UserService:
             raise HTTPException(400, "Invalid credentials")
 
         return user
+    
+    def get_user_by_email(self, email: str):
+        return self.repo.get_user_by_email(email)
+

@@ -1,6 +1,7 @@
-from app.models.home import Home, Position, Room, Activity
+from app.models.models import Home, Position, Room, Activity
 from app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
 from sqlmodel import Session, select
+
 
 class HomeRepository:
     def __init__(self, session: Session):
