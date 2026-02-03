@@ -33,7 +33,7 @@ def register_supervisor(
     data: UserCreate,
     session: Session = Depends(get_session)
 ):
-    data.userType = UserType.SUPERVISOR
+    data.user_type = UserType.SUPERVISOR
 
     repo = UserService(session)
 

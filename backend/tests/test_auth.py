@@ -7,13 +7,13 @@ def test_register_supervisor(client):
             "surnames": "Grande",
             "email": "ariana@gmail.com",
             "password": "123456",
-            "userType": "SUPERVISOR"
+            "user_type": "SUPERVISOR"
         }
     )
     assert response.status_code == 200
     data = response.json()
     assert data["email"] == "ariana@gmail.com"
-    assert data["userType"] == "SUPERVISOR"
+    assert data["user_type"] == "SUPERVISOR"
 
 
 def test_register_supervisor_duplicate_email(client):
@@ -25,7 +25,7 @@ def test_register_supervisor_duplicate_email(client):
             "surnames": "Grande",
             "email": "dup@gmail.com",
             "password": "123456",
-            "userType": "SUPERVISOR"
+            "user_type": "SUPERVISOR"
         }
     )
 
@@ -37,7 +37,7 @@ def test_register_supervisor_duplicate_email(client):
             "surnames": "Grande",
             "email": "dup@gmail.com",
             "password": "123456",
-            "userType": "SUPERVISOR"
+            "user_type": "SUPERVISOR"
         }
     )
     assert response.status_code == 400
@@ -52,7 +52,7 @@ def test_login_success(client):
             "surnames": "Grande",
             "email": "login@gmail.com",
             "password": "123456",
-            "userType": "SUPERVISOR"
+            "user_type": "SUPERVISOR"
         }
     )
 
@@ -76,7 +76,7 @@ def test_login_wrong_password(client):
             "surnames": "Grande",
             "email": "wrongpass@gmail.com",
             "password": "123456",
-            "userType": "SUPERVISOR"
+            "user_type": "SUPERVISOR"
         }
     )
 
@@ -106,7 +106,7 @@ def test_refresh_success(client):
             "surnames": "Grande",
             "email": "refresh@gmail.com",
             "password": "123456",
-            "userType": "SUPERVISOR"
+            "user_type": "SUPERVISOR"
         }
     )
 
@@ -143,7 +143,7 @@ def test_me_authenticated(client):
             "surnames": "Grande",
             "email": "me@gmail.com",
             "password": "123456",
-            "userType": "SUPERVISOR"
+            "user_type": "SUPERVISOR"
         }
     )
 

@@ -24,7 +24,7 @@ class AuthService:
 
         access = create_access_token({"sub": str(user.id)})
 
-        if user.userType == UserType.SUBJECT:
+        if user.user_type == UserType.SUBJECT:
             refresh_days = REFRESH_TOKEN_EXPIRE_DAYS_SUBJECT
         else:
             refresh_days = REFRESH_TOKEN_EXPIRE_DAYS_DEFAULT

@@ -1,5 +1,5 @@
 def auth_header(client):
-    client.post(
+    register_response = client.post(
         "/auth/register-supervisor",
         json={
             "username": "admin",
@@ -7,17 +7,21 @@ def auth_header(client):
             "surnames": "Root",
             "email": "admin@gmail.com",
             "password": "123456",
-            "userType": "SUPERVISOR"
+            "user_type": "SUPERVISOR"
         }
     )
+    print(f"Register status: {register_response.status_code}")
+    print(f"Register response: {register_response.json()}")
 
-    login = client.post(
+    login_response = client.post(
         "/auth/login",
         json={"email": "admin@gmail.com", "password": "123456"}
-    ).json()
-
+    )
+    print(f"Login status: {login_response.status_code}")
+    print(f"Login response: {login_response.json()}")
+    
+    login = login_response.json()
     return {"Authorization": f"Bearer {login['access_token']}"}
-
 
 def test_create_user(client):
     headers = auth_header(client)
@@ -30,7 +34,7 @@ def test_create_user(client):
             "surnames": "User",
             "email": "user1@gmail.com",
             "password": "123456",
-            "userType": "SUBJECT"
+            "user_type": "SUBJECT"
         },
         headers=headers
     )
@@ -50,7 +54,7 @@ def test_duplicate_email(client):
             "surnames": "User",
             "email": "dup@gmail.com",
             "password": "123456",
-            "userType": "SUBJECT"
+            "user_type": "SUBJECT"
         },
         headers=headers
     )
@@ -63,7 +67,7 @@ def test_duplicate_email(client):
             "surnames": "User",
             "email": "dup@gmail.com",
             "password": "123456",
-            "userType": "SUBJECT"
+            "user_type": "SUBJECT"
         },
         headers=headers
     )
@@ -82,7 +86,7 @@ def test_get_user(client):
             "surnames": "User",
             "email": "get@gmail.com",
             "password": "123456",
-            "userType": "SUBJECT"
+            "user_type": "SUBJECT"
         },
         headers=headers
     ).json()
@@ -103,7 +107,7 @@ def test_update_user(client):
             "surnames": "User",
             "email": "update@gmail.com",
             "password": "123456",
-            "userType": "SUBJECT"
+            "user_type": "SUBJECT"
         },
         headers=headers
     ).json()
@@ -129,7 +133,7 @@ def test_delete_user(client):
             "surnames": "User",
             "email": "delete@gmail.com",
             "password": "123456",
-            "userType": "SUBJECT"
+            "user_type": "SUBJECT"
         },
         headers=headers
     ).json()
@@ -152,7 +156,7 @@ def test_get_all_users(client):
             "surnames": "User",
             "email": "all1@gmail.com",
             "password": "123456",
-            "userType": "SUBJECT"
+            "user_type": "SUBJECT"
         },
         headers=headers
     )
@@ -165,7 +169,7 @@ def test_get_all_users(client):
             "surnames": "User",
             "email": "all2@gmail.com",
             "password": "123456",
-            "userType": "SUBJECT"
+            "user_type": "SUBJECT"
         },
         headers=headers
     )
