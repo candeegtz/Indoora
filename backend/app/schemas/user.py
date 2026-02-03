@@ -9,7 +9,7 @@ class UserBase(SQLModel):
     name: str
     surnames: str
     email: str
-    userType: UserType
+    user_type: UserType
 
 
 class UserCreate(UserBase):

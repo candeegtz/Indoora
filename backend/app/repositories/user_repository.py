@@ -14,8 +14,8 @@ class UserRepository:
             name = data.name,
             surnames = data.surnames,
             email = data.email,
-            password = hash_password(data.password),
-            userType = data.userType
+            password_hash = hash_password(data.password),
+            user_type = data.user_type
         )
         self.session.add(user)
         self.session.commit()
