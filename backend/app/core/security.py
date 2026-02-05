@@ -5,7 +5,7 @@ from passlib.context import CryptContext
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-SECRET_KEY = "SUPER_SECRET_KEY_CHANGE_THIS"
+SECRET_KEY = "2f66ead3304a75f1823e5a8494402d08ceb2072e212228e57c07baf9f950a430"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS_DEFAULT = 7

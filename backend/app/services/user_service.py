@@ -31,7 +31,7 @@ class UserService:
 
         return self.repo.create_user(data)
 
-    def get_user(self, user_id: int):
+    def get_user_by_id(self, user_id: int):
         user = self.repo.get_user_by_id(user_id)
         if not user:
             raise HTTPException(404, "User not found")
