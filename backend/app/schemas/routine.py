@@ -2,27 +2,7 @@ from __future__ import annotations
 from sqlmodel import SQLModel
 from typing import Optional, List
 from datetime import time
-from app.models.routine import DaysOfWeek
-
-
-# ------------DayRoutine------------
-
-class DayRoutineBase(SQLModel):
-    day: DaysOfWeek
-    home_id: int
-
-
-class DayRoutineCreate(DayRoutineBase):
-    pass
-
-
-class DayRoutineUpdate(SQLModel):
-    day: Optional[DaysOfWeek] = None
-    home_id: Optional[int] = None
-
-
-class DayRoutineRead(DayRoutineBase):
-    id: int
+from app.models.models import DaysOfWeek
 
 
 # ------------Routine------------
@@ -32,6 +12,7 @@ class RoutineBase(SQLModel):
     description: Optional[str] = None
     startTime: time
     endTime: time
+    days: List[DaysOfWeek]
 
 
 class RoutineCreate(RoutineBase):
@@ -43,10 +24,11 @@ class RoutineUpdate(SQLModel):
     description: Optional[str] = None
     startTime: Optional[time] = None
     endTime: Optional[time] = None
+    days: Optional[List[DaysOfWeek]] = None
     activity_id: Optional[int] = None
 
 
 class RoutineRead(RoutineBase):
     id: int
     activity_id: int
-    dayroutines: List[DayRoutineRead] = []
+    

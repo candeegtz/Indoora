@@ -1,7 +1,7 @@
 from __future__ import annotations
 from sqlmodel import SQLModel
 from typing import Optional, List
-from app.models.home import RoomType
+from app.models.models import RoomType
 
 
 

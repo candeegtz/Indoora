@@ -1,7 +1,8 @@
-from app.models.user import UserType
+from app.models.models import UserType
 from fastapi import HTTPException
 from sqlmodel import Session
 from app.core.security import (
+    decode_token,
     verify_password,
     create_access_token,
     create_refresh_token,
@@ -24,7 +25,7 @@ class AuthService:
 
         access = create_access_token({"sub": str(user.id)})
 
-        if user.userType == UserType.SUBJECT:
+        if user.user_type == UserType.SUBJECT:
             refresh_days = REFRESH_TOKEN_EXPIRE_DAYS_SUBJECT
         else:
             refresh_days = REFRESH_TOKEN_EXPIRE_DAYS_DEFAULT
@@ -36,3 +37,25 @@ class AuthService:
             "refresh_token": refresh,
             "token_type": "bearer"
         }
+    
+    def refresh(self, refresh_token: str):
+        payload = decode_token(refresh_token)
+        if not payload:
+            raise HTTPException(401, "Invalid refresh token")
+
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(401, "Invalid refresh token")
+
+        user = self.user_repo.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(404, "User not found")
+
+        # Crear nuevo access token
+        new_access = create_access_token({"sub": str(user.id)})
+
+        return {
+            "access_token": new_access,
+            "token_type": "bearer"
+        }
+

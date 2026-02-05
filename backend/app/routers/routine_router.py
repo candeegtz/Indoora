@@ -4,7 +4,6 @@ from sqlmodel import Session
 from app.database import get_session 
 from app.schemas.routine import (
     RoutineCreate, RoutineUpdate, RoutineRead,
-    DayRoutineCreate, DayRoutineUpdate, DayRoutineRead
 )
 from app.dependencies.auth import get_current_user
 

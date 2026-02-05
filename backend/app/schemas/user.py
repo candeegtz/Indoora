@@ -1,7 +1,7 @@
 from __future__ import annotations
 from sqlmodel import SQLModel
 from typing import Optional
-from app.models.user import UserType
+from app.models.models import UserType
 
 
 class UserBase(SQLModel):
@@ -9,7 +9,7 @@ class UserBase(SQLModel):
     name: str
     surnames: str
     email: str
-    userType: UserType
+    user_type: UserType
 
 
 class UserCreate(UserBase):
@@ -21,7 +21,7 @@ class UserUpdate(SQLModel):
     name: Optional[str] = None
     surnames: Optional[str] = None
     email: Optional[str] = None
-    userType: Optional[UserType] = None
+    user_type: Optional[UserType] = None
     password: Optional[str] = None
 
 
