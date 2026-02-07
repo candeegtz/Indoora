@@ -7,13 +7,13 @@ def test_register_supervisor(client):
             "surnames": "Grande",
             "email": "ariana@gmail.com",
             "password": "123456",
-            "user_type": "SUPERVISOR"
+            "userType": "SUPERVISOR"
         }
     )
     assert response.status_code == 200
     data = response.json()
     assert data["email"] == "ariana@gmail.com"
-    assert data["user_type"] == "SUPERVISOR"
+    assert data["userType"] == "SUPERVISOR"
 
 
 def test_register_supervisor_duplicate_email(client):

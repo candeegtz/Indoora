@@ -6,7 +6,7 @@ from app.models.models import (
     ReceptorDevice, ActivityPosition
 )
 
-DATABASE_URL = "sqlite:///database.db"
+DATABASE_URL = "sqlite:///indoora.db"
 
 engine = create_engine(DATABASE_URL, echo=True)
 
