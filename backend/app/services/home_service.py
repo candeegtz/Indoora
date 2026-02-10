@@ -1,3 +1,4 @@
+from app.models.models import User, UserType
 from sqlmodel import Session
 from fastapi import HTTPException
 
@@ -18,8 +19,11 @@ class HomeService:
 
     # ------------Home------------
 
-    def create_home(self, data: HomeCreate):
+    def create_home(self, data: HomeCreate, current_user: User = None):
         
+        if not current_user or current_user.user_type != UserType.SUPERVISOR_CREATOR and current_user.user_type != UserType.ADMIN:
+            raise HTTPException(403, "Only admins and supervisors can create homes")
+
         if not data.name.strip():
             raise HTTPException(400, "Home name cannot be empty")
 
@@ -31,7 +35,10 @@ class HomeService:
             raise HTTPException(404, "Home not found")
         return home
 
-    def update_home(self, home_id: int, data: HomeUpdate):
+    def update_home(self, home_id: int, data: HomeUpdate, current_user: User = None):
+        if not current_user or current_user.user_type != UserType.SUPERVISOR_CREATOR and current_user.user_type != UserType.ADMIN:
+            raise HTTPException(403, "Only admins and supervisors can update homes")
+        
         return self.repo.update(home_id, data)
 
     def delete_home(self, home_id: int):

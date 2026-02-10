@@ -18,17 +18,17 @@ router = APIRouter(prefix="/homes", tags=["Homes"])
 def create_home(
     data: HomeCreate,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
-    return repo.create_home(data)
+    return repo.create_home(data, current_user)
 
 
 @router.get("/{home_id}", response_model=HomeRead)
 def get_home(
     home_id: int,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     home = repo.get_home_by_id(home_id)
@@ -40,7 +40,7 @@ def get_home(
 @router.get("/", response_model=list[HomeRead])
 def get_all_homes(
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     return repo.get_all_homes()
@@ -51,17 +51,17 @@ def update_home(
     home_id: int,
     data: HomeUpdate,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
-    return repo.update_home(home_id, data)
+    return repo.update_home(home_id, data, current_user)
 
 
 @router.delete("/{home_id}")
 def delete_home(
     home_id: int,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     repo.delete_home(home_id)
@@ -74,7 +74,7 @@ def delete_home(
 def create_room(
     data: RoomCreate,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     return repo.create_room(data)
@@ -84,7 +84,7 @@ def create_room(
 def get_room(
     room_id: int,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     room = repo.get_room_by_id(room_id)
@@ -97,7 +97,7 @@ def get_room(
 def get_rooms_by_home(
     home_id: int,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     return repo.get_rooms_by_home(home_id)
@@ -108,7 +108,7 @@ def update_room(
     room_id: int,
     data: RoomUpdate,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     return repo.update_room(room_id, data)
@@ -118,7 +118,7 @@ def update_room(
 def delete_room(
     room_id: int,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     repo.delete_room(room_id)
@@ -131,7 +131,7 @@ def delete_room(
 def create_position(
     data: PositionCreate,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     return repo.create_position(data)
@@ -141,7 +141,7 @@ def create_position(
 def get_position(
     position_id: int,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     pos = repo.get_position_by_id(position_id)
@@ -154,7 +154,7 @@ def get_position(
 def get_positions_by_room(
     room_id: int,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     return repo.get_positions_by_room(room_id)
@@ -165,7 +165,7 @@ def update_position(
     position_id: int,
     data: PositionUpdate,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     return repo.update_position(position_id, data)
@@ -175,7 +175,7 @@ def update_position(
 def delete_position(
     position_id: int,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
     repo.delete_position(position_id)
