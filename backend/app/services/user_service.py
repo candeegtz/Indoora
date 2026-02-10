@@ -1,5 +1,5 @@
 from app.repositories.home_repository import HomeRepository
-from backend.app.models.models import UserType
+from app.models.models import User, UserType
 from fastapi import HTTPException
 from sqlmodel import Session
 
@@ -14,7 +14,7 @@ class UserService:
         self.home_repo = HomeRepository(session)
 
 
-    def create_user(self, data: UserCreate, subject_username: str = None, current_user = None):
+    def create_user(self, data: UserCreate, subject_username: str = None, current_user: User = None):
         # Email no vacío
         if not data.email.strip():
             raise HTTPException(400, "Email cannot be empty")
@@ -88,7 +88,7 @@ class UserService:
     def get_all_users(self):
         return self.repo.get_all_users()
 
-    def update_user(self, user_id: int, data: UserUpdate, current_user = None):
+    def update_user(self, user_id: int, data: UserUpdate, current_user : User = None):
         
         if not current_user:
             raise HTTPException(401, "Authentication required")
@@ -137,7 +137,7 @@ class UserService:
         
         return self.repo.update_user(user_id, data)
 
-    def delete_user(self, user_id: int, current_user = None):
+    def delete_user(self, user_id: int, current_user: User = None):
         user = self.repo.get_user_by_id(user_id)
 
         if not current_user:

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped
 
 class UserType(str, enum.Enum):
     ADMIN = "ADMIN"
-    SUPERVISOR = "SUPERVISOR_CREATOR"
+    SUPERVISOR_CREATOR = "SUPERVISOR_CREATOR"
     SUPERVISOR = "SUPERVISOR"  
     SUBJECT = "SUBJECT"
 

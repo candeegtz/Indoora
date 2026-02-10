@@ -1,3 +1,4 @@
+from app.models.models import User
 from fastapi import HTTPException
 from sqlmodel import Session
 
@@ -27,7 +28,7 @@ class RoutineService:
                         return True
         return False
 
-    def create_routine(self, data: RoutineCreate, current_user = None):
+    def create_routine(self, data: RoutineCreate, current_user: User = None):
         
         activity = self.activity_repo.get_activity_by_id(data.activity_id) 
         if not activity:
@@ -59,13 +60,13 @@ class RoutineService:
         return self.repo.create_routine(data)
     
 
-    def get_routine(self, routine_id: int, current_user = None):
+    def get_routine(self, routine_id: int, current_user: User = None):
         routine = self.repo.get_routine_by_id(routine_id)
         if not routine:
             raise HTTPException(404, "Routine not found")
         return routine
     
-    def get_routines_by_home_id(self, home_id: int, current_user = None):
+    def get_routines_by_home_id(self, home_id: int, current_user: User = None):
         if not current_user or current_user.home_id != home_id:
             raise HTTPException(403, "Forbidden: You don't have access to this home's routines")
 
@@ -74,7 +75,7 @@ class RoutineService:
     def get_all_routines(self):
         return self.repo.get_all_routines()
 
-    def update_routine(self, routine_id: int, data: RoutineUpdate, current_user = None):
+    def update_routine(self, routine_id: int, data: RoutineUpdate, current_user: User = None):
 
         activity = self.activity_repo.get_activity_by_id(data.activity_id) 
         if not activity:
@@ -107,7 +108,7 @@ class RoutineService:
 
         return self.repo.update_routine(routine_id, data)
 
-    def delete_routine(self, routine_id: int, current_user = None):
+    def delete_routine(self, routine_id: int, current_user: User = None):
         routine = self.repo.get_routine_by_id(routine_id)
         if not routine:
             raise HTTPException(404, "Routine not found")
