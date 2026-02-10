@@ -34,6 +34,10 @@ class DeviceService:
         emisors = self.repo.get_all_emisors()
         if any(d.macAddress == data.macAddress for d in emisors):
             raise HTTPException(400, "MAC address already registered")
+        
+        # Usuario solo puede tener un dispositivo emisor
+        if self.repo.get_emisor_by_user_id(data.user_id):
+            raise HTTPException(400, "User already has an emisor device")
 
         return self.repo.create_emisor(data)
 

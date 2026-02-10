@@ -49,6 +49,8 @@ class DeviceRepository:
         self.session.delete(device)
         self.session.commit()
 
+    def get_emisor_device_by_user_id(self, user_id: int) -> EmisorDevice | None:
+        return self.session.exec(select(EmisorDevice).where(EmisorDevice.user_id == user_id)).first()
 
     # ------------ReceptorDevice (ESP32)------------
 
