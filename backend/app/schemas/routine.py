@@ -27,6 +27,7 @@ class RoutineUpdate(SQLModel):
     start_time: Optional[time] = Field(default=None, alias="startTime")
     end_time: Optional[time] = Field(default=None, alias="endTime")
     days: Optional[List[str]] = None
+    activity_id: Optional[int] = Field(default=None, alias="activityId")
     
     model_config = ConfigDict(populate_by_name=True)
 
