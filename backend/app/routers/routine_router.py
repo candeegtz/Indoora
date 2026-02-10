@@ -5,7 +5,7 @@ from app.database import get_session
 from app.schemas.routine import (
     RoutineCreate, RoutineUpdate, RoutineRead,
 )
-from app.dependencies.auth import get_current_current_user
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/routines", tags=["Routines"])
 
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/routines", tags=["Routines"])
 def create_routine(
     data: RoutineCreate,
     session: Session = Depends(get_session),
-    current_user = Depends(get_current_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = RoutineService(session)
     return repo.create_routine(data, current_user)
@@ -24,7 +24,7 @@ def create_routine(
 def get_routine_by_id(
     routine_id: int,
     session: Session = Depends(get_session),
-    current_user = Depends(get_current_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = RoutineService(session)
     routine = repo.get_routine_by_id(routine_id)
@@ -36,7 +36,7 @@ def get_routine_by_id(
 @router.get("/", response_model=list[RoutineRead])
 def get_all_routines(
     session: Session = Depends(get_session),
-    current_user = Depends(get_current_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = RoutineService(session)
     return repo.get_all_routines()
@@ -45,7 +45,7 @@ def get_all_routines(
 def get_routines_by_home_id(
     home_id: int,
     session: Session = Depends(get_session),
-    current_user = Depends(get_current_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = RoutineService(session)
     return repo.get_routines_by_home_id(home_id, current_user)
@@ -55,7 +55,7 @@ def update_routine(
     routine_id: int,
     data: RoutineUpdate,
     session: Session = Depends(get_session),
-    current_user = Depends(get_current_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = RoutineService(session)
     return repo.update_routine(routine_id, data, current_user)
@@ -65,7 +65,7 @@ def update_routine(
 def delete_routine(
     routine_id: int,
     session: Session = Depends(get_session),
-    current_user = Depends(get_current_current_user)
+    current_user = Depends(get_current_user)
 ):
     repo = RoutineService(session)
     repo.delete_routine(routine_id)
