@@ -1,4 +1,6 @@
+from typing import Optional
 from app.services.user_service import UserService
+from backend.app.models.models import User, User, UserType
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from app.database import get_session
@@ -11,11 +13,13 @@ router = APIRouter(prefix="/users", tags=["Users"])
 @router.post("/", response_model=UserRead)
 def create_user(
     data: UserCreate,
+    subject_username: Optional[str] = None,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    repo = UserService(session)
-    return repo.create_user(data)
+    service = UserService(session)
+        
+    return service.create_user(data, subject_username, current_user)
 
 
 @router.get("/{user_id}", response_model=UserRead)
@@ -24,8 +28,8 @@ def get_user(
     session: Session = Depends(get_session),
     user = Depends(get_current_user)
 ):
-    repo = UserService(session)
-    user_db = repo.get_user_by_id(user_id)
+    service = UserService(session)
+    user_db = service.get_user_by_id(user_id)
     if not user_db:
         raise HTTPException(404, "User not found")
     return user_db
@@ -36,8 +40,8 @@ def get_all_users(
     session: Session = Depends(get_session),
     user = Depends(get_current_user)
 ):
-    repo = UserService(session)
-    return repo.get_all_users()
+    service = UserService(session)
+    return service.get_all_users()
 
 
 @router.put("/{user_id}", response_model=UserRead)
@@ -45,18 +49,18 @@ def update_user(
     user_id: int,
     data: UserUpdate,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
-    repo = UserService(session)
-    return repo.update_user(user_id, data)
+    service = UserService(session)
+    return service.update_user(user_id, data, current_user)
 
 
 @router.delete("/{user_id}")
 def delete_user(
     user_id: int,
     session: Session = Depends(get_session),
-    user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
-    repo = UserService(session)
-    repo.delete_user(user_id)
+    service = UserService(session)
+    service.delete_user(user_id, current_user)
     return {"message": "User deleted successfully"}
