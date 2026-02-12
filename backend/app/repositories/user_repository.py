@@ -1,6 +1,7 @@
+from unittest import result
 from app.schemas.user import UserCreate, UserUpdate
 from sqlmodel import Session, select
-from app.models.models import EmisorDevice, User
+from app.models.models import EmisorDevice, User, UserType
 from app.core.security import hash_password
 
 
@@ -59,3 +60,11 @@ class UserRepository:
     
     def get_user_by_username(self, username: str) -> User | None:
         return self.session.exec(select(User).where(User.username == username)).first()
+
+    def has_home_with_subject(self, home_id: int) -> bool:
+        call = select(User).where(
+            User.home_id == home_id,
+            User.user_type == UserType.SUBJECT
+        )
+        result = self.session.exec(call).first()
+        return result is not None

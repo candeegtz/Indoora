@@ -73,7 +73,7 @@ class UserService:
             if not current_user.home_id:
                 raise HTTPException(400, "home_id is required for SUBJECT")
             
-            has_home_with_subject = self.home_repo.has_home_with_subject(current_user.home_id)
+            has_home_with_subject = self.repo.has_home_with_subject(current_user.home_id)
             if has_home_with_subject:
                 raise HTTPException(400, "Home with subject exists. Homes can only have one subject, and it must be created through a SUPERVISOR_CREATOR user")
             home_id_user = current_user.home_id

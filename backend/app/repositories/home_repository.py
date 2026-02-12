@@ -49,9 +49,6 @@ class HomeRepository:
     
     def get_home_by_user_id(self, user_id: int) -> Home | None:
         return self.session.exec(select(Home).where(Home.users.any(User.id == user_id))).first()
-    
-    def has_home_with_subject(self, home_id: int) -> bool:
-        return self.session.exec(select(Home).where(Home.id == home_id and Home.users.any(User.user_type == "SUBJECT"))).first() is not None
 
     # ------------Room------------
     
