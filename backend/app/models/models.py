@@ -6,10 +6,10 @@ from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped
 
 
-# ============= ENUMS =============
 class UserType(str, enum.Enum):
     ADMIN = "ADMIN"
-    SUPERVISOR = "SUPERVISOR"
+    SUPERVISOR_CREATOR = "SUPERVISOR_CREATOR"
+    SUPERVISOR = "SUPERVISOR"  
     SUBJECT = "SUBJECT"
 
 
@@ -31,22 +31,26 @@ class RoomType(str, enum.Enum):
     OTHER = "OTHER"
 
 
-# ============= LINK TABLES =============
 class ActivityPosition(SQLModel, table=True):
     activity_id: int = Field(foreign_key="activity.id", primary_key=True)
     position_id: int = Field(foreign_key="position.id", primary_key=True)
 
 
-# ============= MODELOS =============
 class Home(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
+
+    users: Mapped[List["User"]] = Relationship(back_populates="home")
 
     rooms: Mapped[List["Room"]] = Relationship(
         back_populates="home",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
-    users: Mapped[List["User"]] = Relationship(back_populates="home")
+    
+    activities: Mapped[List["Activity"]] = Relationship(
+        back_populates="home",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 
 class User(SQLModel, table=True):
@@ -54,7 +58,7 @@ class User(SQLModel, table=True):
     username: str = Field(index=True, unique=True)
     name: str
     surnames: str
-    email: str = Field(index=True, unique=True)
+    email: str = Field(index=True)
     password_hash: str
     user_type: UserType
 
@@ -63,7 +67,7 @@ class User(SQLModel, table=True):
 
     emisor_device: Mapped[Optional["EmisorDevice"]] = Relationship(
         back_populates="user",
-        sa_relationship_kwargs={"uselist": False}
+        sa_relationship_kwargs={"uselist": False, "cascade": "all, delete-orphan"}
     )
 
 
@@ -84,11 +88,15 @@ class Room(SQLModel, table=True):
     home_id: int = Field(foreign_key="home.id")
     home: Mapped["Home"] = Relationship(back_populates="rooms")
 
-    receptor_device: Mapped[Optional["ReceptorDevice"]] = Relationship(
+    receptor_devices: Mapped[List["ReceptorDevice"]] = Relationship(
         back_populates="room",
-        sa_relationship_kwargs={"uselist": False}
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
-    positions: Mapped[List["Position"]] = Relationship(back_populates="room")
+    
+    positions: Mapped[List["Position"]] = Relationship(
+        back_populates="room",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 
 class ReceptorDevice(SQLModel, table=True):
@@ -96,8 +104,39 @@ class ReceptorDevice(SQLModel, table=True):
     name: str
     mac_address: str = Field(index=True, unique=True)
 
-    room_id: int = Field(foreign_key="room.id", unique=True)
-    room: Mapped["Room"] = Relationship(back_populates="receptor_device")
+    room_id: int = Field(foreign_key="room.id")
+    room: Mapped["Room"] = Relationship(back_populates="receptor_devices")
+
+
+class Position(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    
+    room_id: int = Field(foreign_key="room.id")
+    room: Mapped["Room"] = Relationship(back_populates="positions")
+
+    activities: Mapped[List["Activity"]] = Relationship(
+        back_populates="positions",
+        link_model=ActivityPosition
+    )
+
+
+class Activity(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+
+    home_id: int = Field(foreign_key="home.id")
+    home: Mapped["Home"] = Relationship(back_populates="activities")
+
+    positions: Mapped[List["Position"]] = Relationship(
+        back_populates="activities",
+        link_model=ActivityPosition
+    )
+    
+    routines: Mapped[List["Routine"]] = Relationship(
+        back_populates="activity",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 
 class Routine(SQLModel, table=True):
@@ -106,34 +145,7 @@ class Routine(SQLModel, table=True):
     description: Optional[str] = None
     start_time: time
     end_time: time
-    days: List[str] = Field(sa_column=Column(JSON))
+    days: List[DaysOfWeek]
 
-    activities: Mapped[List["Activity"]] = Relationship(
-        back_populates="routine",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
-    )
-
-
-class Activity(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-
-    routine_id: int = Field(foreign_key="routine.id")
-    routine: Mapped["Routine"] = Relationship(back_populates="activities")
-
-    positions: Mapped[List["Position"]] = Relationship(
-        back_populates="activities",
-        link_model=ActivityPosition
-    )
-
-
-class Position(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    room_id: int = Field(foreign_key="room.id")
-
-    room: Mapped["Room"] = Relationship(back_populates="positions")
-    activities: Mapped[List["Activity"]] = Relationship(
-        back_populates="positions",
-        link_model=ActivityPosition
-    )
+    activity_id: int = Field(foreign_key="activity.id")
+    activity: Mapped["Activity"] = Relationship(back_populates="routines")

@@ -1,6 +1,6 @@
 from app.schemas.user import UserCreate, UserUpdate
 from sqlmodel import Session, select
-from app.models.models import User
+from app.models.models import EmisorDevice, User
 from app.core.security import hash_password
 
 
@@ -8,14 +8,15 @@ class UserRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def create_user(self, data: UserCreate) -> User:
+    def create_user(self, data: UserCreate, home_id: int = None) -> User:
         user = User(
             username = data.username,
             name = data.name,
             surnames = data.surnames,
             email = data.email,
             password_hash = hash_password(data.password),
-            user_type = data.user_type
+            user_type = data.user_type,
+            home_id = home_id
         )
         self.session.add(user)
         self.session.commit()
@@ -55,5 +56,6 @@ class UserRepository:
 
     def get_user_by_email(self, email: str) -> User | None:
         return self.session.exec(select(User).where(User.email == email)).first()
-
-    # Eliminar user, eliminar HOME y todo lo relacionado?
+    
+    def get_user_by_username(self, username: str) -> User | None:
+        return self.session.exec(select(User).where(User.username == username)).first()

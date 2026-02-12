@@ -52,3 +52,8 @@ class RoutineRepository:
         self.session.delete(routine)
         self.session.commit()
     
+    def get_routines_by_home_id_and_days(self, home_id: int, days: list[str]) -> list[Routine]:
+        return self.session.exec(select(Routine).where(Routine.activity.home_id == home_id and Routine.days.overlap(days))).all()
+    
+    def get_routines_by_home_id(self, home_id: int) -> list[Routine]:
+        return self.session.exec(select(Routine).where(Routine.activity.home_id == home_id)).all()

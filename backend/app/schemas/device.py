@@ -1,13 +1,16 @@
 from __future__ import annotations
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, Field
 from typing import Optional
+from pydantic import ConfigDict
 
 
 # ------------EmisorDevice (pulsera)------------
 
 class EmisorDeviceBase(SQLModel):
     name: str
-    macAddress: str
+    mac_address: str = Field(alias="macAddress")
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class EmisorDeviceCreate(EmisorDeviceBase):
@@ -16,8 +19,10 @@ class EmisorDeviceCreate(EmisorDeviceBase):
 
 class EmisorDeviceUpdate(SQLModel):
     name: Optional[str] = None
-    macAddress: Optional[str] = None
+    mac_address: Optional[str] = Field(default=None, alias="macAddress")
     user_id: Optional[int] = None
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class EmisorDeviceRead(EmisorDeviceBase):
@@ -28,7 +33,10 @@ class EmisorDeviceRead(EmisorDeviceBase):
 # ------------ReceptorDevice (ESP32)------------
 
 class ReceptorDeviceBase(SQLModel):
-    macAddress: str
+    name: str 
+    mac_address: str = Field(alias="macAddress")
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class ReceptorDeviceCreate(ReceptorDeviceBase):
@@ -36,8 +44,11 @@ class ReceptorDeviceCreate(ReceptorDeviceBase):
 
 
 class ReceptorDeviceUpdate(SQLModel):
-    macAddress: Optional[str] = None
+    name: Optional[str] = None 
+    mac_address: Optional[str] = Field(default=None, alias="macAddress")
     room_id: Optional[int] = None
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class ReceptorDeviceRead(ReceptorDeviceBase):
