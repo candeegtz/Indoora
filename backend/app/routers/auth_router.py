@@ -33,13 +33,9 @@ def register_supervisor(
     data: UserCreate,
     session: Session = Depends(get_session)
 ):
-    data.user_type = UserType.SUPERVISOR
 
-    repo = UserService(session)
+    if data.user_type != UserType.SUPERVISOR_CREATOR and data.user_type != UserType.SUPERVISOR:
+        raise HTTPException(400, "Invalid user type")
 
-    existing = repo.get_user_by_email(data.email)
-    if existing:
-        raise HTTPException(400, "Email already registered")
-
-    user = repo.create_user(data)
-    return user
+    service = UserService(session)
+    return service.create_user(data)

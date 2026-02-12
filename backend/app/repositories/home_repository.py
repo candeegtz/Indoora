@@ -11,8 +11,7 @@ class HomeRepository:
 
     def create_home(self, data: HomeCreate) -> Home:
         home = Home(
-            name = data.name,
-            subject_id = data.subject_id
+            name = data.name
         )
 
         self.session.add(home)

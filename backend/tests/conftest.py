@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.main import app
 from app.database import get_session
 
-from app.models import (
+from app.models.models import (
     Home, User, Room, Routine,
     Activity, Position,
     EmisorDevice, ReceptorDevice,

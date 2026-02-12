@@ -1,6 +1,6 @@
 from typing import Optional
 from app.services.user_service import UserService
-from backend.app.models.models import User, User, UserType
+from app.models.models import User, User, UserType
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from app.database import get_session

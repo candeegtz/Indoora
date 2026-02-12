@@ -145,7 +145,7 @@ class Routine(SQLModel, table=True):
     description: Optional[str] = None
     start_time: time
     end_time: time
-    days: List[DaysOfWeek]
+    days: List[DaysOfWeek] = Field(sa_column=Column(JSON))
 
     activity_id: int = Field(foreign_key="activity.id")
     activity: Mapped["Activity"] = Relationship(back_populates="routines")
