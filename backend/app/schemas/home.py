@@ -1,4 +1,5 @@
 from __future__ import annotations
+from app.models.models import RoomType
 from sqlmodel import SQLModel, Field
 from typing import Optional, List
 from pydantic import ConfigDict
@@ -30,7 +31,7 @@ class HomeRead(HomeBase):
 
 class RoomBase(SQLModel):
     name: str
-    room_type: str = Field(alias="roomType")  # RoomType enum
+    room_type: RoomType = Field(alias="roomType")  
     
     model_config = ConfigDict(populate_by_name=True)
 

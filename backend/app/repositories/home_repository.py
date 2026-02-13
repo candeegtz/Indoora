@@ -1,4 +1,4 @@
-from app.models.models import Home, Position, Room, Activity, User
+from app.models.models import Home, Position, Room, Activity, RoomType, User
 from app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
 from sqlmodel import Session, select
 
@@ -53,11 +53,7 @@ class HomeRepository:
     # ------------Room------------
     
     def create_room(self, data: RoomCreate) -> Room:
-        room = Room(
-            name = data.name,
-            roomType = data.roomType,
-            home_id = data.home_id
-        )
+        room = Room.model_validate(data.model_dump())
 
         self.session.add(room)
         self.session.commit()

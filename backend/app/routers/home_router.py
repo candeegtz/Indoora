@@ -70,17 +70,17 @@ def delete_home(
 
 # ------------Room------------
 
-@router.post("/room", response_model=RoomRead)
+@router.post("/rooms", response_model=RoomRead)
 def create_room(
     data: RoomCreate,
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
-    return repo.create_room(data)
+    return repo.create_room(data, current_user)
 
 
-@router.get("/room/{room_id}", response_model=RoomRead)
+@router.get("/rooms/{room_id}", response_model=RoomRead)
 def get_room(
     room_id: int,
     session: Session = Depends(get_session),
@@ -103,7 +103,7 @@ def get_rooms_by_home(
     return repo.get_rooms_by_home(home_id)
 
 
-@router.put("/room/{room_id}", response_model=RoomRead)
+@router.put("/rooms/{room_id}", response_model=RoomRead)
 def update_room(
     room_id: int,
     data: RoomUpdate,
@@ -114,7 +114,7 @@ def update_room(
     return repo.update_room(room_id, data)
 
 
-@router.delete("/room/{room_id}")
+@router.delete("/rooms/{room_id}")
 def delete_room(
     room_id: int,
     session: Session = Depends(get_session),
@@ -127,7 +127,7 @@ def delete_room(
 
 # ------------Position------------
 
-@router.post("/position", response_model=PositionRead)
+@router.post("/positions", response_model=PositionRead)
 def create_position(
     data: PositionCreate,
     session: Session = Depends(get_session),
@@ -137,7 +137,7 @@ def create_position(
     return repo.create_position(data)
 
 
-@router.get("/position/{position_id}", response_model=PositionRead)
+@router.get("/positions/{position_id}", response_model=PositionRead)
 def get_position(
     position_id: int,
     session: Session = Depends(get_session),
@@ -150,7 +150,7 @@ def get_position(
     return pos
 
 
-@router.get("/room/{room_id}/positions", response_model=list[PositionRead])
+@router.get("/rooms/{room_id}/positions", response_model=list[PositionRead])
 def get_positions_by_room(
     room_id: int,
     session: Session = Depends(get_session),
@@ -160,7 +160,7 @@ def get_positions_by_room(
     return repo.get_positions_by_room(room_id)
 
 
-@router.put("/position/{position_id}", response_model=PositionRead)
+@router.put("/positions/{position_id}", response_model=PositionRead)
 def update_position(
     position_id: int,
     data: PositionUpdate,
@@ -171,7 +171,7 @@ def update_position(
     return repo.update_position(position_id, data)
 
 
-@router.delete("/position/{position_id}")
+@router.delete("/positions/{position_id}")
 def delete_position(
     position_id: int,
     session: Session = Depends(get_session),

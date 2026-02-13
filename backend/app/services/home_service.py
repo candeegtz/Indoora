@@ -47,11 +47,16 @@ class HomeService:
     
     # ------------Room------------
 
-    def create_room(self, data: RoomCreate):
-        # Asociación a un
+    def create_room(self, data: RoomCreate, current_user: User = None):
         home = self.repo.get_home_by_id(data.home_id)
         if not home:
             raise HTTPException(404, "Home not found")
+
+        if not current_user or current_user.home_id != data.home_id:
+            raise HTTPException(403, "Forbidden: You don't have access to this home's rooms")
+
+        if not data.name.strip():
+            raise HTTPException(400, "Room name cannot be empty")
 
         return self.repo.create_room(data)
 
