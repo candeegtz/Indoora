@@ -90,7 +90,7 @@ class DeviceService:
 
         return self.repo.create_receptor(data)
 
-    def get_receptor(self, device_id: int):
+    def get_receptor_by_id(self, device_id: int):
         device = self.repo.get_receptor_by_id(device_id)
         if not device:
             raise HTTPException(404, "ReceptorDevice not found")

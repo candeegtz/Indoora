@@ -80,7 +80,7 @@ def create_receptor(
 
 
 @router.get("/receptor/{device_id}", response_model=ReceptorDeviceRead)
-def get_receptor(
+def get_receptor_by_id(
     device_id: int,
     session: Session = Depends(get_session),
     user = Depends(get_current_user)

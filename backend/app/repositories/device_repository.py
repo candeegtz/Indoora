@@ -56,6 +56,7 @@ class DeviceRepository:
 
     def create_receptor(self, device: ReceptorDeviceCreate) -> ReceptorDevice:
         device = ReceptorDevice(
+            name= device.name,
             mac_address = device.mac_address,
             room_id = device.room_id
         )
