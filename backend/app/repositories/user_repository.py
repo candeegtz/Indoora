@@ -35,7 +35,7 @@ class UserRepository:
         if not user:
             raise ValueError("User not found")
         
-        update_data = data.dict(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True)
         
         if "password" in update_data:
             update_data["password_hash"] = hash_password(update_data.pop("password"))
