@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.fixture
 def auth_header(client):
     client.post(
         "/auth/register-supervisor",
@@ -20,7 +24,8 @@ def auth_header(client):
     return {"Authorization": f"Bearer {login['access_token']}"}
 
 
-def create_subject_and_room(client, headers):
+@pytest.fixture
+def create_subject_and_room(client, auth_header):
     subject = client.post(
         "/users/",
         json={
@@ -31,32 +36,24 @@ def create_subject_and_room(client, headers):
             "password": "123456",
             "userType": "SUBJECT"
         },
-        headers=headers
-    )
-
-    print("SUBJECT STATUS:", subject.status_code)
-    print("SUBJECT RESPONSE:", subject.json())
-
-    subject = subject.json()
+        headers=auth_header
+    ).json()
 
     room = client.post(
         "/homes/rooms",
-
         json={
             "name": "Living Room",
             "roomType": "LIVING_ROOM",
             "homeId": subject["homeId"]
         },
-        headers=headers
+        headers=auth_header
     ).json()
 
     return subject["id"], room["id"]
 
-def test_create_emisor_device(client):
-    headers = auth_header(client)
-    subject_id, _ = create_subject_and_room(client, headers)
 
-    print("TEST - Subject ID:", subject_id)
+def test_create_emisor_device(client, auth_header, create_subject_and_room):
+    subject_id, _ = create_subject_and_room
 
     response = client.post(
         "/devices/emisor",
@@ -65,11 +62,8 @@ def test_create_emisor_device(client):
             "macAddress": "AA:BB:CC:DD:EE:01",
             "userId": subject_id
         },
-        headers=headers
+        headers=auth_header
     )
-
-    print("STATUS:", response.status_code)
-    print("RESPONSE:", response.json())
 
     assert response.status_code == 200
     data = response.json()
@@ -78,9 +72,8 @@ def test_create_emisor_device(client):
     assert data["userId"] == subject_id
 
 
-def test_create_emisor_duplicate_mac(client):
-    headers = auth_header(client)
-    subject_id, _ = create_subject_and_room(client, headers)
+def test_create_emisor_duplicate_mac(client, auth_header, create_subject_and_room):
+    subject_id, _ = create_subject_and_room
 
     client.post(
         "/devices/emisor",
@@ -89,7 +82,7 @@ def test_create_emisor_duplicate_mac(client):
             "macAddress": "AA:BB:CC:DD:EE:02",
             "userId": subject_id
         },
-        headers=headers
+        headers=auth_header
     )
 
     response = client.post(
@@ -99,16 +92,15 @@ def test_create_emisor_duplicate_mac(client):
             "macAddress": "AA:BB:CC:DD:EE:02",
             "userId": subject_id
         },
-        headers=headers
+        headers=auth_header
     )
 
     assert response.status_code == 400
     assert "MAC address already registered" in response.json()["detail"]
 
 
-def test_create_emisor_user_already_has_device(client):
-    headers = auth_header(client)
-    subject_id, _ = create_subject_and_room(client, headers)
+def test_create_emisor_user_already_has_device(client, auth_header, create_subject_and_room):
+    subject_id, _ = create_subject_and_room
 
     client.post(
         "/devices/emisor",
@@ -117,7 +109,7 @@ def test_create_emisor_user_already_has_device(client):
             "macAddress": "AA:BB:CC:DD:EE:03",
             "userId": subject_id
         },
-        headers=headers
+        headers=auth_header
     )
 
     response = client.post(
@@ -127,16 +119,14 @@ def test_create_emisor_user_already_has_device(client):
             "macAddress": "AA:BB:CC:DD:EE:04",
             "userId": subject_id
         },
-        headers=headers
+        headers=auth_header
     )
 
     assert response.status_code == 400
     assert "already has an emisor device" in response.json()["detail"]
 
 
-def test_create_emisor_user_not_found(client):
-    headers = auth_header(client)
-
+def test_create_emisor_user_not_found(client, auth_header):
     response = client.post(
         "/devices/emisor",
         json={
@@ -144,16 +134,15 @@ def test_create_emisor_user_not_found(client):
             "macAddress": "AA:BB:CC:DD:EE:05",
             "userId": 99999 
         },
-        headers=headers
+        headers=auth_header
     )
 
     assert response.status_code == 404
     assert "User not found" in response.json()["detail"]
 
 
-def test_get_emisor_device(client):
-    headers = auth_header(client)
-    subject_id, _ = create_subject_and_room(client, headers)
+def test_get_emisor_device(client, auth_header, create_subject_and_room):
+    subject_id, _ = create_subject_and_room
 
     created = client.post(
         "/devices/emisor",
@@ -162,10 +151,10 @@ def test_get_emisor_device(client):
             "macAddress": "AA:BB:CC:DD:EE:06",
             "userId": subject_id
         },
-        headers=headers
+        headers=auth_header
     ).json()
 
-    response = client.get(f"/devices/emisor/{created['id']}", headers=headers)
+    response = client.get(f"/devices/emisor/{created['id']}", headers=auth_header)
 
     assert response.status_code == 200
     data = response.json()
@@ -173,19 +162,14 @@ def test_get_emisor_device(client):
     assert data["name"] == "Pulsera Get Test"
 
 
-def test_get_emisor_not_found(client):
-    headers = auth_header(client)
-
-    response = client.get("/devices/emisor/99999", headers=headers)
-
+def test_get_emisor_not_found(client, auth_header):
+    response = client.get("/devices/emisor/99999", headers=auth_header)
     assert response.status_code == 404
 
 
-def test_get_all_emisors(client):
-    headers = auth_header(client)
-    subject_id, _ = create_subject_and_room(client, headers)
+def test_get_all_emisors(client, auth_header, create_subject_and_room):
+    subject_id, _ = create_subject_and_room
 
-    # Crear dispositivo
     client.post(
         "/devices/emisor",
         json={
@@ -193,20 +177,18 @@ def test_get_all_emisors(client):
             "macAddress": "AA:BB:CC:DD:EE:07",
             "userId": subject_id
         },
-        headers=headers
+        headers=auth_header
     )
 
-    response = client.get("/devices/emisor", headers=headers)
+    response = client.get("/devices/emisor", headers=auth_header)
 
     assert response.status_code == 200
     assert len(response.json()) >= 1
 
 
-def test_update_emisor_device(client):
-    headers = auth_header(client)
-    subject_id, _ = create_subject_and_room(client, headers)
+def test_update_emisor_device(client, auth_header, create_subject_and_room):
+    subject_id, _ = create_subject_and_room
 
-    # Crear dispositivo
     created = client.post(
         "/devices/emisor",
         json={
@@ -214,14 +196,13 @@ def test_update_emisor_device(client):
             "macAddress": "AA:BB:CC:DD:EE:08",
             "userId": subject_id
         },
-        headers=headers
+        headers=auth_header
     ).json()
 
-    # Actualizar
     response = client.put(
         f"/devices/emisor/{created['id']}",
         json={"name": "Pulsera Actualizada"},
-        headers=headers
+        headers=auth_header
     )
 
     assert response.status_code == 200
@@ -230,11 +211,9 @@ def test_update_emisor_device(client):
     assert data["macAddress"] == "AA:BB:CC:DD:EE:08" 
 
 
-def test_update_emisor_duplicate_mac(client):
-    headers = auth_header(client)
-    subject_id, _ = create_subject_and_room(client, headers)
+def test_update_emisor_duplicate_mac(client, auth_header, create_subject_and_room):
+    subject_id, _ = create_subject_and_room
 
-    # Crear segundo SUPERVISOR_CREATOR con su propio home
     creator2_response = client.post(
         "/users/",
         json={
@@ -246,10 +225,9 @@ def test_update_emisor_duplicate_mac(client):
             "userType": "SUPERVISOR_CREATOR",
             "homeName": "Home2"
         },
-        headers=headers
+        headers=auth_header
     )
     
-    # Login como creator2
     login2 = client.post(
         "/auth/login",
         json={"email": "creator2@gmail.com", "password": "123456"}
@@ -257,7 +235,6 @@ def test_update_emisor_duplicate_mac(client):
     
     headers2 = {"Authorization": f"Bearer {login2['access_token']}"}
 
-    # Crear subject2 en el nuevo home
     subject2 = client.post(
         "/users/",
         json={
@@ -268,10 +245,9 @@ def test_update_emisor_duplicate_mac(client):
             "password": "123456",
             "userType": "SUBJECT"
         },
-        headers=headers2  # ← Usar headers del creator2
+        headers=headers2
     ).json()
 
-    # Crear device1 para subject1
     device1 = client.post(
         "/devices/emisor",
         json={
@@ -279,10 +255,9 @@ def test_update_emisor_duplicate_mac(client):
             "macAddress": "AA:BB:CC:DD:EE:09",
             "userId": subject_id
         },
-        headers=headers
+        headers=auth_header
     ).json()
 
-    # Crear device2 para subject2
     client.post(
         "/devices/emisor",
         json={
@@ -290,25 +265,22 @@ def test_update_emisor_duplicate_mac(client):
             "macAddress": "AA:BB:CC:DD:EE:10",
             "userId": subject2["id"]
         },
-        headers=headers2  # ← Usar headers del creator2
+        headers=headers2
     )
 
-    # Intentar actualizar device1 con la MAC de device2
     response = client.put(
         f"/devices/emisor/{device1['id']}",
         json={"macAddress": "AA:BB:CC:DD:EE:10"},
-        headers=headers
+        headers=auth_header
     )
 
     assert response.status_code == 400
     assert "MAC address already registered" in response.json()["detail"]
 
 
-def test_delete_emisor_device(client):
-    headers = auth_header(client)
-    subject_id, _ = create_subject_and_room(client, headers)
+def test_delete_emisor_device(client, auth_header, create_subject_and_room):
+    subject_id, _ = create_subject_and_room
 
-    # Crear dispositivo
     created = client.post(
         "/devices/emisor",
         json={
@@ -316,15 +288,13 @@ def test_delete_emisor_device(client):
             "macAddress": "AA:BB:CC:DD:EE:11",
             "userId": subject_id
         },
-        headers=headers
+        headers=auth_header
     ).json()
 
-    # Eliminar
-    response = client.delete(f"/devices/emisor/{created['id']}", headers=headers)
+    response = client.delete(f"/devices/emisor/{created['id']}", headers=auth_header)
 
     assert response.status_code == 200
     assert "deleted successfully" in response.json()["message"]
 
-    # Verificar que ya no existe
-    get_response = client.get(f"/devices/emisor/{created['id']}", headers=headers)
+    get_response = client.get(f"/devices/emisor/{created['id']}", headers=auth_header)
     assert get_response.status_code == 404
