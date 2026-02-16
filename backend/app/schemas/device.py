@@ -14,8 +14,9 @@ class EmisorDeviceBase(SQLModel):
 
 
 class EmisorDeviceCreate(EmisorDeviceBase):
-    user_id: int
+    user_id: int = Field(alias="userId")
 
+    model_config = ConfigDict(populate_by_name=True)
 
 class EmisorDeviceUpdate(SQLModel):
     name: Optional[str] = None
@@ -27,7 +28,7 @@ class EmisorDeviceUpdate(SQLModel):
 
 class EmisorDeviceRead(EmisorDeviceBase):
     id: int
-    user_id: int
+    user_id: int = Field(alias="userId")
 
 
 # ------------ReceptorDevice (ESP32)------------

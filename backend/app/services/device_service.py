@@ -22,7 +22,7 @@ class DeviceService:
 
     def create_emisor(self, data: EmisorDeviceCreate):
         # MAC no vacía
-        if not data.macAddress.strip():
+        if not data.mac_address.strip():
             raise HTTPException(400, "MAC address cannot be empty")
 
         # Usuario debe existir
@@ -32,16 +32,16 @@ class DeviceService:
 
         # MAC única
         emisors = self.repo.get_all_emisors()
-        if any(d.macAddress == data.macAddress for d in emisors):
+        if any(d.mac_address == data.mac_address for d in emisors):
             raise HTTPException(400, "MAC address already registered")
         
         # Usuario solo puede tener un dispositivo emisor
-        if self.repo.get_emisor_by_user_id(data.user_id):
+        if self.repo.get_emisor_device_by_user_id(data.user_id):
             raise HTTPException(400, "User already has an emisor device")
 
         return self.repo.create_emisor(data)
 
-    def get_emisor(self, device_id: int):
+    def get_emisor_by_id(self, device_id: int):
         device = self.repo.get_emisor_by_id(device_id)
         if not device:
             raise HTTPException(404, "EmisorDevice not found")
@@ -56,9 +56,9 @@ class DeviceService:
             raise HTTPException(404, "EmisorDevice not found")
 
         # MAC única si se actualiza
-        if data.macAddress:
+        if data.mac_address:
             emisors = self.repo.get_all_emisors()
-            if any(d.macAddress == data.macAddress and d.id != device_id for d in emisors):
+            if any(d.mac_address == data.mac_address and d.id != device_id for d in emisors):
                 raise HTTPException(400, "MAC address already registered")
 
         return self.repo.update_emisor(device_id, data)
@@ -75,7 +75,7 @@ class DeviceService:
 
     def create_receptor(self, data: ReceptorDeviceCreate):
         # MAC no vacía
-        if not data.macAddress.strip():
+        if not data.mac_address.strip():
             raise HTTPException(400, "MAC address cannot be empty")
 
         # Room debe existir
@@ -85,7 +85,7 @@ class DeviceService:
 
         # MAC única
         receptors = self.repo.get_all_receptors()
-        if any(d.macAddress == data.macAddress for d in receptors):
+        if any(d.mac_address == data.mac_address for d in receptors):
             raise HTTPException(400, "MAC address already registered")
 
         return self.repo.create_receptor(data)
@@ -105,9 +105,9 @@ class DeviceService:
             raise HTTPException(404, "ReceptorDevice not found")
 
         # MAC única si se actualiza
-        if data.macAddress:
+        if data.mac_address:
             receptors = self.repo.get_all_receptors()
-            if any(d.macAddress == data.macAddress and d.id != device_id for d in receptors):
+            if any(d.mac_address == data.mac_address and d.id != device_id for d in receptors):
                 raise HTTPException(400, "MAC address already registered")
 
         return self.repo.update_receptor(device_id, data)
