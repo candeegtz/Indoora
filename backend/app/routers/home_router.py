@@ -43,7 +43,7 @@ def get_all_homes(
     current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
-    return repo.get_all_homes()
+    return repo.get_all_homes(current_user)
 
 
 @router.put("/{home_id}", response_model=HomeRead)
@@ -94,13 +94,13 @@ def get_room(
 
 
 @router.get("/{home_id}/rooms", response_model=list[RoomRead])
-def get_rooms_by_home(
+def get_rooms_by_home_by_id(
     home_id: int,
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
-    return repo.get_rooms_by_home(home_id)
+    return repo.get_rooms_by_home_id(home_id)
 
 
 @router.put("/rooms/{room_id}", response_model=RoomRead)
@@ -151,13 +151,13 @@ def get_position(
 
 
 @router.get("/rooms/{room_id}/positions", response_model=list[PositionRead])
-def get_positions_by_room(
+def get_positions_by_room_by_id(
     room_id: int,
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
-    return repo.get_positions_by_room(room_id)
+    return repo.get_positions_by_room_by_id(room_id)
 
 
 @router.put("/positions/{position_id}", response_model=PositionRead)

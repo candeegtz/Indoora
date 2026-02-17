@@ -30,7 +30,7 @@ class HomeRepository:
         if not home:
             raise ValueError("Home not found")
         
-        update_data = data.dict(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True)  
 
         for key, value in update_data.items():
             setattr(home, key, value)
@@ -71,7 +71,7 @@ class HomeRepository:
         if not room:
             raise ValueError("Room not found")
         
-        update_data = data.dict(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True)  
 
         for key, value in update_data.items():
             setattr(room, key, value)
@@ -88,6 +88,8 @@ class HomeRepository:
         self.session.delete(room)
         self.session.commit()   
 
+    def get_rooms_by_home_id(self, home_id: int) -> list[Room]:
+        return self.session.exec(select(Room).where(Room.home_id == home_id)).all()
     
     # ------------Position------------
 
@@ -108,12 +110,12 @@ class HomeRepository:
     def get_all_positions(self) -> list[Position]:
         return self.session.exec(select(Position)).all()
     
-    def update_position(self, position_id: int, data: PositionCreate) -> PositionCreate:
+    def update_position(self, position_id: int, data: PositionCreate) -> Position:
         position = self.get_position_by_id(position_id)
         if not position:
             raise ValueError("Position not found")
         
-        update_data = data.dict(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True) 
 
         for key, value in update_data.items():
             setattr(position, key, value)
@@ -123,13 +125,15 @@ class HomeRepository:
         return position
     
     def delete_position(self, position_id: int):
-        position = self.get_room_by_id(position_id)
+        position = self.get_position_by_id(position_id)
         if not position:
             raise ValueError("Position not found")
         
         self.session.delete(position)
         self.session.commit()   
 
+    def get_positions_by_room_id(self, room_id: int) -> list[Position]:
+        return self.session.exec(select(Position).where(Position.room_id == room_id)).all()
 
     # ------------Activity------------
 
@@ -151,7 +155,7 @@ class HomeRepository:
         if not activity:
             raise ValueError("Activity not found")
 
-        update_data = data.dict(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True)
 
         for key, value in update_data.items():
             setattr(activity, key, value)
