@@ -10,7 +10,6 @@ from app.schemas.home import (
     ActivityCreate, ActivityUpdate
 )
 
- # TODO: Añadir reglas de negocio
 
 class HomeService:
     def __init__(self, session: Session):
@@ -29,7 +28,7 @@ class HomeService:
 
         return self.repo.create_home(data)
 
-    def get_home(self, home_id: int):
+    def get_home_by_id(self, home_id: int):
         home = self.repo.get_home_by_id(home_id)
         if not home:
             raise HTTPException(404, "Home not found")
@@ -40,6 +39,12 @@ class HomeService:
             raise HTTPException(403, "Only admins and supervisors can update homes")
         
         return self.repo.update(home_id, data)
+    
+    def get_all_homes(self, current_user: User = None):
+        if not current_user or current_user.user_type != UserType.ADMIN:
+            raise HTTPException(403, "Only admins and supervisors can view homes")
+        
+        return self.repo.get_all_homes()
 
     def delete_home(self, home_id: int):
         self.repo.delete_home(home_id)
@@ -47,15 +52,20 @@ class HomeService:
     
     # ------------Room------------
 
-    def create_room(self, data: RoomCreate):
-        # Asociación a un
+    def create_room(self, data: RoomCreate, current_user: User = None):
         home = self.repo.get_home_by_id(data.home_id)
         if not home:
             raise HTTPException(404, "Home not found")
 
+        if not current_user or current_user.home_id != data.home_id:
+            raise HTTPException(403, "Forbidden: You don't have access to this home's rooms")
+
+        if not data.name.strip():
+            raise HTTPException(400, "Room name cannot be empty")
+
         return self.repo.create_room(data)
 
-    def get_room(self, room_id: int):
+    def get_room_by_id(self, room_id: int):
         room = self.repo.get_room_by_id(room_id)
         if not room:
             raise HTTPException(404, "Room not found")
@@ -67,7 +77,8 @@ class HomeService:
     def delete_room(self, room_id: int):
         self.repo.delete_room(room_id)
 
-    
+    def get_rooms_by_home_id(self, home_id: int):
+        return self.repo.get_rooms_by_home_id(home_id)
     # ------------Position------------
 
     def create_position(self, data: PositionCreate):
@@ -78,7 +89,7 @@ class HomeService:
 
         return self.repo.create_position(data)
 
-    def get_position(self, position_id: int):
+    def get_position_by_id(self, position_id: int):
         pos = self.repo.get_position_by_id(position_id)
         if not pos:
             raise HTTPException(404, "Position not found")
@@ -90,13 +101,15 @@ class HomeService:
     def delete_position(self, position_id: int):
         self.repo.delete_position(position_id)
 
+    def get_positions_by_room_by_id(self, room_id: int):
+        return self.repo.get_positions_by_room_id(room_id)
     
     # ------------Activity------------
 
     def create_activity(self, data: ActivityCreate):
         return self.repo.create_activity(data)
 
-    def get_activity(self, activity_id: int):
+    def get_activity_by_id(self, activity_id: int):
         activity = self.repo.get_activity_by_id(activity_id)
         if not activity:
             raise HTTPException(404, "Activity not found")

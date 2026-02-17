@@ -14,8 +14,9 @@ class EmisorDeviceBase(SQLModel):
 
 
 class EmisorDeviceCreate(EmisorDeviceBase):
-    user_id: int
+    user_id: int = Field(alias="userId")
 
+    model_config = ConfigDict(populate_by_name=True)
 
 class EmisorDeviceUpdate(SQLModel):
     name: Optional[str] = None
@@ -27,7 +28,7 @@ class EmisorDeviceUpdate(SQLModel):
 
 class EmisorDeviceRead(EmisorDeviceBase):
     id: int
-    user_id: int
+    user_id: int = Field(alias="userId")
 
 
 # ------------ReceptorDevice (ESP32)------------
@@ -40,17 +41,17 @@ class ReceptorDeviceBase(SQLModel):
 
 
 class ReceptorDeviceCreate(ReceptorDeviceBase):
-    room_id: int
+    room_id: int = Field(alias="roomId")
 
 
 class ReceptorDeviceUpdate(SQLModel):
     name: Optional[str] = None 
     mac_address: Optional[str] = Field(default=None, alias="macAddress")
-    room_id: Optional[int] = None
+    room_id: Optional[int] = Field(default=None, alias="roomId")
     
     model_config = ConfigDict(populate_by_name=True)
 
 
 class ReceptorDeviceRead(ReceptorDeviceBase):
     id: int
-    room_id: int
+    room_id: int = Field(alias="roomId")

@@ -1,6 +1,6 @@
 from typing import Optional
 from app.services.user_service import UserService
-from backend.app.models.models import User, User, UserType
+from app.models.models import User, User, UserType
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from app.database import get_session
@@ -13,13 +13,12 @@ router = APIRouter(prefix="/users", tags=["Users"])
 @router.post("/", response_model=UserRead)
 def create_user(
     data: UserCreate,
-    subject_username: Optional[str] = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
     service = UserService(session)
         
-    return service.create_user(data, subject_username, current_user)
+    return service.create_user(data, data.subject_username, current_user)
 
 
 @router.get("/{user_id}", response_model=UserRead)

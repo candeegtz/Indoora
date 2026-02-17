@@ -18,6 +18,7 @@ class UserBase(SQLModel):
 class UserCreate(UserBase):
     password: str
     home_name: Optional[str] = Field(default=None, alias="homeName")
+    subject_username: Optional[str] = Field(default=None, alias="subjectUsername") 
     
     model_config = ConfigDict(populate_by_name=True)
 

@@ -24,7 +24,7 @@ def create_emisor(
 
 
 @router.get("/emisor/{device_id}", response_model=EmisorDeviceRead)
-def get_emisor(
+def get_emisor_by_id(
     device_id: int,
     session: Session = Depends(get_session),
     user = Depends(get_current_user)
@@ -80,7 +80,7 @@ def create_receptor(
 
 
 @router.get("/receptor/{device_id}", response_model=ReceptorDeviceRead)
-def get_receptor(
+def get_receptor_by_id(
     device_id: int,
     session: Session = Depends(get_session),
     user = Depends(get_current_user)

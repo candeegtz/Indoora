@@ -1,5 +1,6 @@
 from app.repositories.home_repository import HomeRepository
 from app.models.models import User, UserType
+from backend.app.schemas.home import HomeCreate
 from fastapi import HTTPException
 from sqlmodel import Session
 
@@ -43,7 +44,8 @@ class UserService:
         if data.user_type == UserType.SUPERVISOR_CREATOR:
             if not data.home_name:
                 raise HTTPException(400, "home_name is required for SUPERVISOR_CREATOR")
-            home = self.home_repo.create_home(data.home_name)
+            home_shema= HomeCreate(name=data.home_name)
+            home = self.home_repo.create_home(home_shema)
             home_id_user = home.id
         
         # Si es solo SUPERVISOR, buscar Home existente por username del SUBJECT
@@ -71,7 +73,7 @@ class UserService:
             if not current_user.home_id:
                 raise HTTPException(400, "home_id is required for SUBJECT")
             
-            has_home_with_subject = self.home_repo.has_home_with_subject(current_user.home_id)
+            has_home_with_subject = self.repo.has_home_with_subject(current_user.home_id)
             if has_home_with_subject:
                 raise HTTPException(400, "Home with subject exists. Homes can only have one subject, and it must be created through a SUPERVISOR_CREATOR user")
             home_id_user = current_user.home_id

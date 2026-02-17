@@ -12,7 +12,7 @@ class DeviceRepository:
     def create_emisor(self, device: EmisorDeviceCreate) -> EmisorDevice:
         device = EmisorDevice(
             name = device.name,
-            macAddress = device.macAddress, 
+            mac_address = device.mac_address, 
             user_id = device.user_id
         )
 
@@ -24,15 +24,15 @@ class DeviceRepository:
     def get_emisor_by_id(self, device_id: int) -> EmisorDevice | None:
         return self.session.get(EmisorDevice, device_id)
 
-    def get_all_emisor(self) -> list[EmisorDevice]:
+    def get_all_emisors(self) -> list[EmisorDevice]:
         return self.session.exec(select(EmisorDevice)).all()
     
-    def update_emisor(self, device_id: int, device: EmisorDeviceUpdate) -> EmisorDevice:
+    def update_emisor(self, device_id: int, data: EmisorDeviceUpdate) -> EmisorDevice:
         device = self.get_emisor_by_id(device_id)
         if not device:
             raise ValueError("EmisorDevice not found")
 
-        update_data = device.dict(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True)
 
         for key, value in update_data.items():
             setattr(device, key, value)
@@ -56,7 +56,8 @@ class DeviceRepository:
 
     def create_receptor(self, device: ReceptorDeviceCreate) -> ReceptorDevice:
         device = ReceptorDevice(
-            macAddress = device.macAddress,
+            name= device.name,
+            mac_address = device.mac_address,
             room_id = device.room_id
         )
 
@@ -69,17 +70,17 @@ class DeviceRepository:
     def get_receptor_by_id(self, device_id: int) -> ReceptorDevice | None:
         return self.session.get(ReceptorDevice, device_id)  
     
-    def get_all_receptor(self) -> list[ReceptorDevice]:
+    def get_all_receptors(self) -> list[ReceptorDevice]:
         return self.session.exec(select(ReceptorDevice)).all()
     
-    def update_receptor(self, device_id: int, device: ReceptorDeviceUpdate) -> ReceptorDevice:
+    def update_receptor(self, device_id: int, data: ReceptorDeviceUpdate) -> ReceptorDevice:
         device = self.get_receptor_by_id(device_id)
         if not device:
             raise ValueError("ReceptorDevice not found")    
         
-        updated_data = device.dict(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True)
 
-        for key, value in updated_data.items():
+        for key, value in update_data.items():
             setattr(device, key, value)
 
         self.session.commit()

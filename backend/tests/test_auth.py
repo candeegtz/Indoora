@@ -3,18 +3,19 @@ def test_register_supervisor(client):
         "/auth/register-supervisor",
         json={
             "username": "supervisor1",
-            "name": "Ariana",
-            "surnames": "Grande",
-            "email": "ariana@gmail.com",
+            "name": "supervisor",
+            "surnames": "One",
+            "email": "supervisor1@gmail.com",
             "password": "123456",
-            "userType": "SUPERVISOR"
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "Test Home"
         }
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["email"] == "ariana@gmail.com"
-    assert data["userType"] == "SUPERVISOR"
-
+    assert data["email"] == "supervisor1@gmail.com"
+    assert data["userType"] == "SUPERVISOR_CREATOR"
+    assert data["homeId"] is not None
 
 def test_register_supervisor_duplicate_email(client):
     client.post(
@@ -25,7 +26,7 @@ def test_register_supervisor_duplicate_email(client):
             "surnames": "Grande",
             "email": "dup@gmail.com",
             "password": "123456",
-            "user_type": "SUPERVISOR"
+            "userType": "SUPERVISOR"
         }
     )
 
@@ -37,7 +38,7 @@ def test_register_supervisor_duplicate_email(client):
             "surnames": "Grande",
             "email": "dup@gmail.com",
             "password": "123456",
-            "user_type": "SUPERVISOR"
+            "userType": "SUPERVISOR"
         }
     )
     assert response.status_code == 400
@@ -48,11 +49,12 @@ def test_login_success(client):
         "/auth/register-supervisor",
         json={
             "username": "supervisor1",
-            "name": "Ariana",
-            "surnames": "Grande",
+            "name": "Supervisor",
+            "surnames": "One",
             "email": "login@gmail.com",
             "password": "123456",
-            "user_type": "SUPERVISOR"
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "Test Home"
         }
     )
 
@@ -60,6 +62,9 @@ def test_login_success(client):
         "/auth/login",
         json={"email": "login@gmail.com", "password": "123456"}
     )
+
+    print("Status:", response.status_code)
+    print("Response:", response.json()) 
 
     assert response.status_code == 200
     data = response.json()
@@ -76,7 +81,8 @@ def test_login_wrong_password(client):
             "surnames": "Grande",
             "email": "wrongpass@gmail.com",
             "password": "123456",
-            "user_type": "SUPERVISOR"
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "Test Home"
         }
     )
 
@@ -97,7 +103,7 @@ def test_login_user_not_found(client):
 
 
 def test_refresh_success(client):
-    # Crear usuario
+
     client.post(
         "/auth/register-supervisor",
         json={
@@ -106,7 +112,8 @@ def test_refresh_success(client):
             "surnames": "Grande",
             "email": "refresh@gmail.com",
             "password": "123456",
-            "user_type": "SUPERVISOR"
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "Test Home"
         }
     )
 
@@ -143,7 +150,8 @@ def test_me_authenticated(client):
             "surnames": "Grande",
             "email": "me@gmail.com",
             "password": "123456",
-            "user_type": "SUPERVISOR"
+            "user_type": "SUPERVISOR_CREATOR",
+            "home_name": "Test Home"
         }
     )
 
