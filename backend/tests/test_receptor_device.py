@@ -19,7 +19,7 @@ def auth_header(client):
 
     login = client.post(
         "/auth/login",
-        json={"email": "admin@gmail.com", "password": "123456"}
+        json={"username": "admin", "password": "123456"}  # ← username
     ).json()
 
     return {"Authorization": f"Bearer {login['access_token']}"}
