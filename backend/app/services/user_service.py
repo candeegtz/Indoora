@@ -1,6 +1,6 @@
 from app.repositories.home_repository import HomeRepository
 from app.models.models import User, UserType
-from backend.app.schemas.home import HomeCreate
+from app.schemas.home import HomeCreate
 from fastapi import HTTPException
 from sqlmodel import Session
 
@@ -32,11 +32,6 @@ class UserService:
         # Contraseña mínima
         if len(data.password) < 6:
             raise HTTPException(400, "Password must be at least 6 characters")
-
-        # Email único
-        existing = self.repo.get_user_by_email(data.email)
-        if existing:
-            raise HTTPException(400, "Email already registered")
 
         home_id_user = None
 

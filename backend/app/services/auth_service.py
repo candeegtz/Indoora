@@ -15,8 +15,9 @@ class AuthService:
     def __init__(self, session: Session):
         self.user_repo = UserRepository(session)
 
-    def login(self, email: str, password: str):
-        user = self.user_repo.get_user_by_email(email)
+    def login(self, username: str, password: str):
+        user = self.user_repo.get_user_by_username(username)
+        
         if not user:
             raise HTTPException(400, "Invalid credentials")
 
