@@ -1,3 +1,4 @@
+from app.core.init_db import create_admin_user
 from sqlmodel import SQLModel, Session, create_engine
 
 from app.models.models import (
@@ -13,6 +14,8 @@ engine = create_engine(DATABASE_URL, echo=True)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        create_admin_user(session)
 
 
 def get_session():
