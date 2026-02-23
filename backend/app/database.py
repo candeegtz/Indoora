@@ -1,4 +1,4 @@
-from app.core.init_db import create_admin_user
+from app.core.init_db import create_admin_user, create_initial_data
 from sqlmodel import SQLModel, Session, create_engine
 
 from app.models.models import (
@@ -16,6 +16,7 @@ def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         create_admin_user(session)
+        create_initial_data(session)
 
 
 def get_session():
