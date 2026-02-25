@@ -1,5 +1,6 @@
-from app.models.models import Home, Position, Room, Activity, RoomType, User
+from app.models.models import Home, Position, Room, Activity, RoomType, User, ROOM_TYPE_LABELS
 from app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
+from backend.app.schemas import home
 from sqlmodel import Session, select
 
 
@@ -10,13 +11,22 @@ class HomeRepository:
     # ------------Home------------
 
     def create_home(self, data: HomeCreate) -> Home:
-        home = Home(
-            name = data.name
-        )
-
+        home = Home(name=data.name)
         self.session.add(home)
         self.session.commit()
-        self.session.refresh(home)
+        self.session.refresh(home)  
+        
+        for room_type in RoomType:
+            if room_type != RoomType.OTHER:
+                room = Room(
+                    name=ROOM_TYPE_LABELS[room_type],
+                    room_type=room_type, 
+                    home_id=home.id
+                )
+                self.session.add(room)
+        
+        self.session.commit()
+    
         return home
     
     def get_home_by_id(self, home_id: int) -> Home | None:
