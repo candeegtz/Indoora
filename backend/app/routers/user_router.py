@@ -18,7 +18,7 @@ def create_user(
 ):
     service = UserService(session)
         
-    return service.create_user(data, data.subject_username, current_user)
+    return service.create_user(data, current_user)
 
 
 @router.get("/{user_id}", response_model=UserRead)
