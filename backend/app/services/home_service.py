@@ -52,17 +52,15 @@ class HomeService:
     
     # ------------Room------------
 
-    def create_room(self, data: RoomCreate, current_user: User = None):
-        home = self.repo.get_home_by_id(data.home_id)
-        if not home:
-            raise HTTPException(404, "Home not found")
-
-        if not current_user or current_user.home_id != data.home_id:
-            raise HTTPException(403, "Forbidden: You don't have access to this home's rooms")
-
+    def create_room(self, data: RoomCreate, current_user: User):
+        if not current_user.home_id:
+            raise HTTPException(400, "User does not have a home assigned")
+        
         if not data.name.strip():
             raise HTTPException(400, "Room name cannot be empty")
-
+        
+        data.home_id = current_user.home_id
+        
         return self.repo.create_room(data)
 
     def get_room_by_id(self, room_id: int):
@@ -79,6 +77,7 @@ class HomeService:
 
     def get_rooms_by_home_id(self, home_id: int):
         return self.repo.get_rooms_by_home_id(home_id)
+    
     # ------------Position------------
 
     def create_position(self, data: PositionCreate):

@@ -147,57 +147,6 @@ def test_create_room_empty_name(client, auth_header, create_subject):
     assert "Room name cannot be empty" in response.json()["detail"]
 
 
-def test_create_room_home_not_found(client, auth_header):
-    response = client.post(
-        "/homes/rooms",
-        json={
-            "name": "Kitchen",
-            "roomType": "KITCHEN",
-            "homeId": 99999
-        },
-        headers=auth_header
-    )
-
-    assert response.status_code == 404
-    assert "Home not found" in response.json()["detail"]
-
-
-def test_create_room_forbidden_different_home(client, auth_header, create_subject):
-    creator2 = client.post(
-        "/users/",
-        json={
-            "username": "creator2",
-            "name": "Creator",
-            "surnames": "Two",
-            "email": "creator2@gmail.com",
-            "password": "123456",
-            "userType": "SUPERVISOR_CREATOR",
-            "homeName": "Another Home"
-        },
-        headers=auth_header
-    ).json()
-
-    login2 = client.post(
-        "/auth/login",
-        json={"username": "creator2", "password": "123456"}
-    ).json()
-    
-    headers2 = {"Authorization": f"Bearer {login2['access_token']}"}
-    home_id = create_subject["homeId"]
-
-    response = client.post(
-        "/homes/rooms",
-        json={
-            "name": "Kitchen",
-            "roomType": "KITCHEN",
-            "homeId": home_id
-        },
-        headers=headers2
-    )
-
-    assert response.status_code == 403
-
-
 def test_get_room(client, auth_header, create_subject):
     home_id = create_subject["homeId"]
     

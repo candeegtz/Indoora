@@ -1,6 +1,5 @@
 from app.models.models import Home, Position, Room, Activity, RoomType, User, ROOM_TYPE_LABELS
 from app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
-from backend.app.schemas import home
 from sqlmodel import Session, select
 
 
