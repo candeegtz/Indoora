@@ -46,10 +46,24 @@ fun RegisterScreen(
         }
     }
 
-    // Después de crear el subject → ir a añadir rooms
-    // A partir de aquí no se puede volver atrás (paso irreversible)
+    // Después de crear el subject → precargar rooms por defecto y avanzar
     LaunchedEffect(createSubjectState) {
         if (createSubjectState is UiState.Success) {
+            if (rooms.isEmpty()) {
+                rooms.addAll(
+                    listOf(
+                        RoomType.LIVING_ROOM to "Salón",
+                        RoomType.BEDROOM     to "Dormitorio",
+                        RoomType.KITCHEN     to "Cocina",
+                        RoomType.BATHROOM    to "Baño"
+                    ).map { (type, name) ->
+                        RoomData().also {
+                            it.name = name
+                            it.type = type
+                        }
+                    }
+                )
+            }
             step = RegisterStep.ADD_ROOMS
         }
     }
@@ -204,7 +218,6 @@ fun RegisterScreen(
                         positionsByRoom = positionsByRoom,
                         isLoading = isLoading,
                         onConfirm = {
-                            // El backend asigna el homeId automáticamente según el usuario autenticado
                             viewModel.createRooms(rooms.map { it.toRoomCreate() })
                         },
                         onBack = { step = RegisterStep.ADD_POSITIONS }

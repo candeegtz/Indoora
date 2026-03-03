@@ -14,17 +14,6 @@ class HomeRepository:
         self.session.add(home)
         self.session.commit()
         self.session.refresh(home)  
-        
-        for room_type in RoomType:
-            if room_type != RoomType.OTHER:
-                room = Room(
-                    name=ROOM_TYPE_LABELS[room_type],
-                    room_type=room_type, 
-                    home_id=home.id
-                )
-                self.session.add(room)
-        
-        self.session.commit()
     
         return home
     

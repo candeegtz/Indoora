@@ -391,29 +391,3 @@ def test_delete_position(client, auth_header, create_subject):
 
     assert response.status_code == 200
     assert "deleted successfully" in response.json()["message"]
-
-
-def test_home_has_default_rooms(client, auth_header):
-    creator = client.post(
-        "/users/",
-        json={
-            "username": "creator_rooms",
-            "name": "Creator",
-            "surnames": "Rooms",
-            "email": "creatorrooms@gmail.com",
-            "password": "123456",
-            "userType": "SUPERVISOR_CREATOR",
-            "homeName": "Casa Rooms Test"
-        },
-        headers=auth_header
-    ).json()
-
-    home_id = creator["homeId"]
-    response = client.get(f"/homes/{home_id}/rooms", headers=auth_header)
-
-    assert response.status_code == 200
-    rooms = response.json()
-    room_types = {room["roomType"] for room in rooms}
-
-    assert len(rooms) == 4
-    assert {"KITCHEN", "LIVING_ROOM", "BEDROOM", "BATHROOM"}.issubset(room_types)
