@@ -46,7 +46,7 @@ fun RegisterHeader(step: RegisterStep, onBack: () -> Unit) {
 }
 
 @Composable
-fun StepIndicator(currentStep: RegisterStep) {
+fun StepIndicator(currentStep: RegisterStep, isSupervisorCreator: Boolean) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -56,6 +56,11 @@ fun StepIndicator(currentStep: RegisterStep) {
         StepDot(active = currentStep.ordinal >= RegisterStep.FILL_FORM.ordinal, label = "Datos")
         StepDivider()
         StepDot(active = currentStep.ordinal >= RegisterStep.HOME_SETUP.ordinal, label = "Hogar")
+        if (isSupervisorCreator){
+            StepDivider()
+            StepDot(active = currentStep.ordinal >= RegisterStep.CREATE_SUBJECT.ordinal, label = "Sujeto")
+            StepDivider()
+        }
     }
 }
 

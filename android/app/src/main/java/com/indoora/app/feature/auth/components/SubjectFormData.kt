@@ -5,39 +5,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.indoora.app.data.model.UserCreate
 
-class RegisterFormData {
+class SubjectFormData {
     var username by mutableStateOf("")
     var name by mutableStateOf("")
     var surnames by mutableStateOf("")
     var email by mutableStateOf("")
     var password by mutableStateOf("")
-    var homeName by mutableStateOf("")
-    var subjectUsername by mutableStateOf("")
 
-    fun isBasicFormValid() = username.isNotBlank()
+    fun isValid() = username.isNotBlank()
             && name.isNotBlank()
             && surnames.isNotBlank()
             && email.isNotBlank()
             && password.length >= 6
 
-    fun toUserCreate(isSupervisorCreator: Boolean) = UserCreate(
+    fun toUserCreate() = UserCreate(
         username = username.trim(),
         name = name.trim(),
         surnames = surnames.trim(),
         email = email.trim(),
         password = password,
-        userType = if (isSupervisorCreator) "SUPERVISOR_CREATOR" else "SUPERVISOR",
-        homeName = if (isSupervisorCreator) homeName.trim() else null,
-        subjectUsername = if (!isSupervisorCreator) subjectUsername.trim() else null
+        userType = "SUBJECT",
+        homeName = null,
+        subjectUsername = null
     )
-}
-
-enum class RegisterStep {
-    CHOOSE_TYPE,
-    FILL_FORM,
-    HOME_SETUP,
-    CREATE_SUBJECT,
-    ADD_ROOMS,
-    ADD_POSITIONS,
-    CONFIRM_SETUP
 }
