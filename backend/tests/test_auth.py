@@ -60,7 +60,7 @@ def test_login_success(client):
 
     response = client.post(
         "/auth/login",
-        json={"email": "login@gmail.com", "password": "123456"}
+        json={"username": "supervisor1", "password": "123456"}
     )
 
     print("Status:", response.status_code)
@@ -88,7 +88,7 @@ def test_login_wrong_password(client):
 
     response = client.post(
         "/auth/login",
-        json={"email": "wrongpass@gmail.com", "password": "badpass"}
+        json={"username": "supervisor1", "password": "badpass"}
     )
 
     assert response.status_code == 400
@@ -97,7 +97,7 @@ def test_login_wrong_password(client):
 def test_login_user_not_found(client):
     response = client.post(
         "/auth/login",
-        json={"email": "noexist@gmail.com", "password": "123456"}
+        json={"username": "noexist", "password": "123456"}
     )
     assert response.status_code == 400
 
@@ -119,7 +119,7 @@ def test_refresh_success(client):
 
     login = client.post(
         "/auth/login",
-        json={"email": "refresh@gmail.com", "password": "123456"}
+        json={"username": "supervisor1", "password": "123456"}
     ).json()
 
     refresh_token = login["refresh_token"]
@@ -157,7 +157,7 @@ def test_me_authenticated(client):
 
     login = client.post(
         "/auth/login",
-        json={"email": "me@gmail.com", "password": "123456"}
+        json={"username": "supervisor1", "password": "123456"}
     ).json()
 
     token = login["access_token"]

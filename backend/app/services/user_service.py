@@ -1,6 +1,6 @@
 from app.repositories.home_repository import HomeRepository
 from app.models.models import User, UserType
-from backend.app.schemas.home import HomeCreate
+from app.schemas.home import HomeCreate
 from fastapi import HTTPException
 from sqlmodel import Session
 
@@ -15,7 +15,8 @@ class UserService:
         self.home_repo = HomeRepository(session)
 
 
-    def create_user(self, data: UserCreate, subject_username: str = None, current_user: User = None):
+    def create_user(self, data: UserCreate, current_user: User = None):
+
         # Email no vacío
         if not data.email.strip():
             raise HTTPException(400, "Email cannot be empty")
@@ -33,36 +34,32 @@ class UserService:
         if len(data.password) < 6:
             raise HTTPException(400, "Password must be at least 6 characters")
 
-        # Email único
-        existing = self.repo.get_user_by_email(data.email)
-        if existing:
-            raise HTTPException(400, "Email already registered")
-
         home_id_user = None
 
         # Si es SUPERVISOR_CREATOR, crear Home nuevo
         if data.user_type == UserType.SUPERVISOR_CREATOR:
             if not data.home_name:
                 raise HTTPException(400, "home_name is required for SUPERVISOR_CREATOR")
-            home_shema= HomeCreate(name=data.home_name)
-            home = self.home_repo.create_home(home_shema)
+            home_schema = HomeCreate(name=data.home_name)
+            home = self.home_repo.create_home(home_schema)
             home_id_user = home.id
         
-        # Si es solo SUPERVISOR, buscar Home existente por username del SUBJECT
+        # Si es SUPERVISOR, buscar Home existente por username del SUBJECT
         elif data.user_type == UserType.SUPERVISOR:
-            if not subject_username:
+            if not data.subject_username:
                 raise HTTPException(400, "subject_username is required for SUPERVISOR")
             
-            subject = self.repo.get_user_by_username(subject_username)
+            subject = self.repo.get_user_by_username(data.subject_username)
             if not subject:
                 raise HTTPException(404, "Subject not found")
-            
+                        
             # Verificar que es un Subject
             if subject.user_type != UserType.SUBJECT:
-                raise HTTPException(400, f"User '{subject_username}' is not a SUBJECT")
+                raise HTTPException(400, f"User '{data.subject_username}' is not a SUBJECT")
             
             if not subject.home_id:
-                raise HTTPException(404, f"Subject '{subject_username}' does not have a Home assigned")
+                raise HTTPException(404, f"Subject '{data.subject_username}' does not have a Home assigned")
+            
             home_id_user = subject.home_id
 
         # La creación de SUBJECT se hace exclusivamente en la creación del user SUPERVISOR_CREATOR

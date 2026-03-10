@@ -30,6 +30,13 @@ class RoomType(str, enum.Enum):
     BATHROOM = "BATHROOM"
     OTHER = "OTHER"
 
+ROOM_TYPE_LABELS = {
+    RoomType.KITCHEN: "Cocina",
+    RoomType.LIVING_ROOM: "Salón",
+    RoomType.BEDROOM: "Dormitorio",
+    RoomType.BATHROOM: "Baño",
+    RoomType.OTHER: "Otro"
+}
 
 class ActivityPosition(SQLModel, table=True):
     activity_id: int = Field(foreign_key="activity.id", primary_key=True)

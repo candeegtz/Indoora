@@ -20,7 +20,7 @@ def auth_header(client):
 
     login_response = client.post(
         "/auth/login",
-        json={"email": "admin@gmail.com", "password": "123456"}
+        json={"username": "admin", "password": "123456"}  # ← username en lugar de email
     )
 
     token = login_response.json()["access_token"]
@@ -179,26 +179,6 @@ def test_create_user_duplicate_username(client, create_supervisor_creator_with_s
     assert response.status_code == 400
     assert "Username already taken" in response.json()["detail"]
 
-
-def test_create_user_duplicate_email(client, create_supervisor_creator_with_subject):
-    data = create_supervisor_creator_with_subject
-    
-    response = client.post(
-        "/users/",
-        json={
-            "username": "anotheruser",
-            "name": "Another",
-            "surnames": "User",
-            "email": "subject1@gmail.com",  # Ya existe
-            "password": "123456",
-            "userType": "SUBJECT"
-        },
-        headers=data["headers"]
-    )
-
-    assert response.status_code == 400
-    assert "Email already registered" in response.json()["detail"]
-
 def test_create_second_subject_same_home_fails(client, create_supervisor_creator_with_subject):
     data = create_supervisor_creator_with_subject
     
@@ -298,7 +278,7 @@ def test_create_supervisor_for_non_subject_user_fails(client, auth_header):
             "email": "sup1@gmail.com",
             "password": "123456",
             "userType": "SUPERVISOR",
-            "subjectUsername": "creator2"  # No es SUBJECT
+            "subjectUsername": "creator2" 
         },
         headers=auth_header
     )
@@ -346,11 +326,9 @@ def test_get_all_users_success(client, create_supervisor_creator_with_subject):
 
     assert response.status_code == 200
     users = response.json()
-    assert len(users) >= 2  # Al menos admin y subject1
+    assert len(users) >= 2  
     assert isinstance(users, list)
 
-
-# ==================== TESTS DE UPDATE ====================
 
 def test_update_own_profile_success(client, create_supervisor_creator_with_subject):
     """Usuario puede editar su propio perfil"""
@@ -386,7 +364,6 @@ def test_update_user_duplicate_username_fails(client, create_supervisor_creator_
     """Update con username existente debe fallar"""
     data = create_supervisor_creator_with_subject
     
-    # Crear otro usuario
     user2 = client.post(
         "/users/",
         json={
@@ -401,10 +378,9 @@ def test_update_user_duplicate_username_fails(client, create_supervisor_creator_
         headers=data["headers"]
     ).json()
     
-    # Intentar actualizar subject1 con username de creator2
     response = client.put(
         f"/users/{data['subject']['id']}",
-        json={"username": "creator2"},  # Ya existe
+        json={"username": "creator2"},
         headers=data["headers"]
     )
 
@@ -412,41 +388,10 @@ def test_update_user_duplicate_username_fails(client, create_supervisor_creator_
     assert "Username already taken" in response.json()["detail"]
 
 
-def test_update_user_duplicate_email_fails(client, create_supervisor_creator_with_subject):
-    """Update con email existente debe fallar"""
-    data = create_supervisor_creator_with_subject
-    
-    # Crear otro usuario
-    client.post(
-        "/users/",
-        json={
-            "username": "creator2",
-            "name": "Creator",
-            "surnames": "Two",
-            "email": "creator2@gmail.com",
-            "password": "123456",
-            "userType": "SUPERVISOR_CREATOR",
-            "homeName": "CasaDos"
-        },
-        headers=data["headers"]
-    )
-    
-    # Intentar actualizar subject1 con email de creator2
-    response = client.put(
-        f"/users/{data['subject']['id']}",
-        json={"email": "creator2@gmail.com"},  # Ya existe
-        headers=data["headers"]
-    )
-
-    assert response.status_code == 400
-    assert "Email already registered" in response.json()["detail"]
-
-
 def test_update_user_forbidden_outside_home(client, create_supervisor_creator_with_subject):
     """No se puede editar usuarios de otro Home"""
     data = create_supervisor_creator_with_subject
     
-    # Crear otro SUPERVISOR_CREATOR con otro Home
     creator2 = client.post(
         "/users/",
         json={
@@ -461,14 +406,12 @@ def test_update_user_forbidden_outside_home(client, create_supervisor_creator_wi
         headers=data["headers"]
     ).json()
 
-    # Login como creator2
     login2 = client.post(
         "/auth/login",
-        json={"email": "creator2@gmail.com", "password": "123456"}
+        json={"username": "creator2", "password": "123456"}  
     ).json()
     headers2 = {"Authorization": f"Bearer {login2['access_token']}"}
 
-    # Intentar editar subject1 (de otro Home)
     response = client.put(
         f"/users/{data['subject']['id']}",
         json={"name": "Hacked"},
@@ -492,10 +435,9 @@ def test_update_password_success(client, create_supervisor_creator_with_subject)
 
     assert response.status_code == 200
     
-    # Verificar que puede hacer login con nueva contraseña
     login = client.post(
         "/auth/login",
-        json={"email": "subject1@gmail.com", "password": "newpassword123"}
+        json={"username": "subject1", "password": "newpassword123"}  # ← username
     )
     assert login.status_code == 200
 
@@ -578,10 +520,10 @@ def test_delete_user_different_home_forbidden(client, create_supervisor_creator_
         headers=data["headers"]
     ).json()
 
-    # Login como creator2
+    # Login como creator2 - USANDO USERNAME
     login2 = client.post(
         "/auth/login",
-        json={"email": "creator2@gmail.com", "password": "123456"}
+        json={"username": "creator2", "password": "123456"}  # ← username
     ).json()
     headers2 = {"Authorization": f"Bearer {login2['access_token']}"}
 
@@ -643,3 +585,52 @@ def test_delete_user_without_auth_fails(client):
     """DELETE sin autenticación debe fallar"""
     response = client.delete("/users/1")
     assert response.status_code == 401
+
+
+def test_login_with_username_success(client):
+    """Login exitoso con username"""
+    # Registrar usuario
+    client.post(
+        "/auth/register-supervisor",
+        json={
+            "username": "testuser",
+            "name": "Test",
+            "surnames": "User",
+            "email": "test@example.com",
+            "password": "123456",
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "TestHome"
+        }
+    )
+
+    # Login con username
+    response = client.post(
+        "/auth/login",
+        json={"username": "testuser", "password": "123456"}
+    )
+
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+    assert "refresh_token" in response.json()
+
+
+def test_login_with_wrong_username_fails(client):
+    """Login con username incorrecto debe fallar"""
+    response = client.post(
+        "/auth/login",
+        json={"username": "wronguser", "password": "123456"}
+    )
+
+    assert response.status_code == 400
+    assert "Invalid credentials" in response.json()["detail"]
+
+
+def test_login_with_wrong_password_fails(client, auth_header):
+    """Login con contraseña incorrecta debe fallar"""
+    response = client.post(
+        "/auth/login",
+        json={"username": "admin", "password": "wrongpassword"}
+    )
+
+    assert response.status_code == 400
+    assert "Invalid credentials" in response.json()["detail"]

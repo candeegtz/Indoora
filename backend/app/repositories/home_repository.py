@@ -1,4 +1,4 @@
-from app.models.models import Home, Position, Room, Activity, RoomType, User
+from app.models.models import Home, Position, Room, Activity, RoomType, User, ROOM_TYPE_LABELS
 from app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
 from sqlmodel import Session, select
 
@@ -10,13 +10,11 @@ class HomeRepository:
     # ------------Home------------
 
     def create_home(self, data: HomeCreate) -> Home:
-        home = Home(
-            name = data.name
-        )
-
+        home = Home(name=data.name)
         self.session.add(home)
         self.session.commit()
-        self.session.refresh(home)
+        self.session.refresh(home)  
+    
         return home
     
     def get_home_by_id(self, home_id: int) -> Home | None:

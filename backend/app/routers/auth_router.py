@@ -14,7 +14,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 @router.post("/login")
 def login(data: LoginRequest, session: Session = Depends(get_session)):
     service = AuthService(session)
-    return service.login(data.email, data.password)
+    return service.login(data.username, data.password)
 
 
 @router.post("/refresh")

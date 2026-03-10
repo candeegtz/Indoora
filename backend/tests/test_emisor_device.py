@@ -18,7 +18,7 @@ def auth_header(client):
 
     login = client.post(
         "/auth/login",
-        json={"email": "admin@gmail.com", "password": "123456"}
+        json={"username": "admin", "password": "123456"}
     ).json()
 
     return {"Authorization": f"Bearer {login['access_token']}"}
@@ -230,7 +230,7 @@ def test_update_emisor_duplicate_mac(client, auth_header, create_subject_and_roo
     
     login2 = client.post(
         "/auth/login",
-        json={"email": "creator2@gmail.com", "password": "123456"}
+        json={"username": "creator2", "password": "123456"}
     ).json()
     
     headers2 = {"Authorization": f"Bearer {login2['access_token']}"}
