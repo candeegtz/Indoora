@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.database import create_db_and_tables
 
 from app.routers import (
@@ -12,7 +13,17 @@ from app.routers import (
 
 app = FastAPI(
     title="Indoora Backend",
-    version="0.1.0"
+    version="0.1.0",
+    description="API REST para sistema de posicionamiento interior"
+)
+
+# ⚠️ IMPORTANTE: CORS para que Android pueda conectarse
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite todos los orígenes (desarrollo)
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite GET, POST, PUT, DELETE, etc.
+    allow_headers=["*"],  # Permite todos los headers (Authorization, etc.)
 )
 
 @app.on_event("startup")
@@ -29,4 +40,8 @@ app.include_router(home_router.router)
 
 @app.get("/")
 def root():
-    return {"message": "Backend activo"}
+    return {"message": "Indoora API - Backend activo"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "database": "postgresql"}
