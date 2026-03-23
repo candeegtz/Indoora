@@ -10,7 +10,10 @@ class HomeRepository:
     # ------------Home------------
 
     def create_home(self, data: HomeCreate) -> Home:
-        home = Home(name=data.name)
+        home = Home(
+            name=data.name,
+            estado_config=data.estado_config
+        )
         self.session.add(home)
         self.session.commit()
         self.session.refresh(home)  
