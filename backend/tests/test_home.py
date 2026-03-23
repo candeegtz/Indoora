@@ -1,5 +1,5 @@
 import pytest
-from app.models.models import RoomType
+from app.models.models import RoomType, EstadoConfig
 
 
 @pytest.fixture
@@ -52,6 +52,21 @@ def test_create_home(client, auth_header):
 
     assert response.status_code == 200
     assert response.json()["name"] == "New Home"
+    assert response.json()["estadoConfig"] == EstadoConfig.NOT_CONFIG  
+
+
+def test_create_home_with_estado_config(client, auth_header):
+    response = client.post(
+        "/homes/",
+        json={
+            "name": "Configured Home",
+            "estadoConfig": EstadoConfig.ONLY_DEVICES_CONFIG
+        },
+        headers=auth_header
+    )
+
+    assert response.status_code == 200
+    assert response.json()["estadoConfig"] == EstadoConfig.ONLY_DEVICES_CONFIG
 
 
 def test_create_home_empty_name(client, auth_header):
@@ -72,6 +87,7 @@ def test_get_home(client, auth_header, create_subject):
 
     assert response.status_code == 200
     assert response.json()["id"] == home_id
+    assert "estadoConfig" in response.json() 
 
 
 def test_get_home_not_found(client, auth_header):
@@ -97,6 +113,38 @@ def test_update_home(client, auth_header, create_subject):
 
     assert response.status_code == 200
     assert response.json()["name"] == "Updated Home"
+    assert "estadoConfig" in response.json()  
+
+
+def test_update_home_estado_config(client, auth_header, create_subject):
+    """Test actualizar solo el estadoConfig"""
+    home_id = create_subject["homeId"]
+    
+    response = client.put(
+        f"/homes/{home_id}",
+        json={"estadoConfig": EstadoConfig.CONFIG_COMPLETED},
+        headers=auth_header
+    )
+
+    assert response.status_code == 200
+    assert response.json()["estadoConfig"] == EstadoConfig.CONFIG_COMPLETED
+
+
+def test_update_home_name_and_estado_config(client, auth_header, create_subject):
+    home_id = create_subject["homeId"]
+    
+    response = client.put(
+        f"/homes/{home_id}",
+        json={
+            "name": "Fully Updated Home",
+            "estadoConfig": EstadoConfig.ONLY_DEVICES_CONFIG
+        },
+        headers=auth_header
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Fully Updated Home"
+    assert response.json()["estadoConfig"] == EstadoConfig.ONLY_DEVICES_CONFIG
 
 
 def test_delete_home(client, auth_header):
@@ -110,6 +158,35 @@ def test_delete_home(client, auth_header):
 
     assert response.status_code == 200
     assert "deleted successfully" in response.json()["message"]
+
+
+def test_home_estado_config_default_on_register(client):
+    response = client.post(
+        "/auth/register-supervisor",
+        json={
+            "username": "newsuper",
+            "name": "New",
+            "surnames": "Supervisor",
+            "email": "newsuper@gmail.com",
+            "password": "123456",
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "Auto Created Home"
+        }
+    )
+
+    assert response.status_code == 200
+
+    login = client.post(
+        "/auth/login",
+        json={"username": "newsuper", "password": "123456"}
+    ).json()
+    
+    auth_header = {"Authorization": f"Bearer {login['access_token']}"}
+
+    me = client.get("/auth/me", headers=auth_header).json()
+    
+    home_response = client.get(f"/homes/{me['home_id']}", headers=auth_header)
+    assert home_response.json()["estadoConfig"] == EstadoConfig.NOT_CONFIG
 
 
 def test_create_room(client, auth_header, create_subject):
