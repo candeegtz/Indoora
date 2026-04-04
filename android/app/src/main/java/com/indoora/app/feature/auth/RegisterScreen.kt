@@ -18,22 +18,23 @@ import com.indoora.app.ui.theme.indooraBackground
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel,
-    onRegisterSuccess: () -> Unit,
+    onRegisterSuccess: (homeId: Int) -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateBack: () -> Unit = {}
 ) {
     var step by remember { mutableStateOf(RegisterStep.CHOOSE_TYPE) }
     var isSupervisorCreator by remember { mutableStateOf(true) }
 
-    val formData = remember { RegisterFormData() }
+    val formData        = remember { RegisterFormData() }
     val subjectFormData = remember { SubjectFormData() }
-    val rooms = remember { mutableStateListOf<RoomData>() }
+    val rooms           = remember { mutableStateListOf<RoomData>() }
     val positionsByRoom = remember { mutableStateMapOf<RoomData, MutableList<PositionData>>() }
 
-    val registerState by viewModel.registerAndLoginState.collectAsState()
-    val createSubjectState by viewModel.createSubjectState.collectAsState()
-    val createRoomsState by viewModel.createRoomsState.collectAsState()
+    val registerState        by viewModel.registerAndLoginState.collectAsState()
+    val createSubjectState   by viewModel.createSubjectState.collectAsState()
+    val createRoomsState     by viewModel.createRoomsState.collectAsState()
     val createPositionsState by viewModel.createPositionsState.collectAsState()
+    val homeIdState          by viewModel.homeIdState.collectAsState()
 
     // Después de registrarse
     LaunchedEffect(registerState) {
@@ -41,8 +42,14 @@ fun RegisterScreen(
             if (isSupervisorCreator) {
                 step = RegisterStep.CREATE_SUBJECT
             } else {
-                onRegisterSuccess()
+                // Sin supervisor creator: esperar a homeIdState
             }
+        }
+    }
+
+    LaunchedEffect(homeIdState) {
+        if (homeIdState is UiState.Success && !isSupervisorCreator) {
+            onRegisterSuccess((homeIdState as UiState.Success<Int>).data)
         }
     }
 
@@ -72,7 +79,7 @@ fun RegisterScreen(
     LaunchedEffect(createRoomsState) {
         if (createRoomsState is UiState.Success) {
             val createdRooms = (createRoomsState as UiState.Success).data
-            val roomMap = createdRooms.associateBy { it.name }
+            val roomMap      = createdRooms.associateBy { it.name }
             val allPositions = mutableListOf<PositionCreate>()
 
             positionsByRoom.forEach { (localRoom, positions) ->
@@ -99,10 +106,13 @@ fun RegisterScreen(
         }
     }
 
-    // Cuando rooms Y positions están listas → navegar al Home
+    // Cuando rooms Y positions están listas → navegar al Home con homeId
     LaunchedEffect(createRoomsState, createPositionsState) {
         if (createRoomsState is UiState.Success && createPositionsState is UiState.Success) {
-            onRegisterSuccess()
+            val homeId = (homeIdState as? UiState.Success<Int>)?.data
+            if (homeId != null) {
+                onRegisterSuccess(homeId)
+            }
         }
     }
 
@@ -120,13 +130,13 @@ fun RegisterScreen(
             step = step,
             onBack = {
                 when (step) {
-                    RegisterStep.CHOOSE_TYPE -> onNavigateBack()
-                    RegisterStep.FILL_FORM -> step = RegisterStep.CHOOSE_TYPE
-                    RegisterStep.HOME_SETUP -> step = RegisterStep.FILL_FORM
+                    RegisterStep.CHOOSE_TYPE    -> onNavigateBack()
+                    RegisterStep.FILL_FORM      -> step = RegisterStep.CHOOSE_TYPE
+                    RegisterStep.HOME_SETUP     -> step = RegisterStep.FILL_FORM
                     RegisterStep.CREATE_SUBJECT -> {}
-                    RegisterStep.ADD_ROOMS -> {}
-                    RegisterStep.ADD_POSITIONS -> step = RegisterStep.ADD_ROOMS
-                    RegisterStep.CONFIRM_SETUP -> step = RegisterStep.ADD_POSITIONS
+                    RegisterStep.ADD_ROOMS      -> {}
+                    RegisterStep.ADD_POSITIONS  -> step = RegisterStep.ADD_ROOMS
+                    RegisterStep.CONFIRM_SETUP  -> step = RegisterStep.ADD_POSITIONS
                 }
             }
         )
@@ -198,7 +208,7 @@ fun RegisterScreen(
                         }
                         step = RegisterStep.ADD_POSITIONS
                     },
-                    onBack = {} // bloqueado — paso irreversible
+                    onBack = {}
                 )
 
                 RegisterStep.ADD_POSITIONS -> AddPositionsStep(
@@ -227,7 +237,7 @@ fun RegisterScreen(
         }
 
         if (step == RegisterStep.CHOOSE_TYPE ||
-            step == RegisterStep.FILL_FORM ||
+            step == RegisterStep.FILL_FORM   ||
             step == RegisterStep.HOME_SETUP
         ) {
             Spacer(modifier = Modifier.height(24.dp))

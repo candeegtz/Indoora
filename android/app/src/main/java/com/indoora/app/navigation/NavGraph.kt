@@ -8,24 +8,39 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.indoora.app.data.repository.AuthRepository
+import com.indoora.app.data.repository.HomeRepository
 import com.indoora.app.feature.auth.AuthViewModel
 import com.indoora.app.feature.auth.AuthViewModelFactory
 import com.indoora.app.feature.auth.LoginScreen
 import com.indoora.app.feature.auth.RegisterScreen
 import com.indoora.app.feature.home.HomeScreen
+import com.indoora.app.feature.home.HomeViewModel
+import com.indoora.app.feature.home.HomeViewModelFactory
 import com.indoora.app.feature.splash.SplashScreen
 
 sealed class Screen(val route: String) {
-    object Splash : Screen("splash")
-    object Login : Screen("login")
-    object Register : Screen("register")
-    object Home : Screen("home")
+    object Splash          : Screen("splash")
+    object Login           : Screen("login")
+    object Register        : Screen("register")
+    object Home            : Screen("home/{homeId}") {
+        fun createRoute(homeId: Int) = "home/$homeId"
+    }
+    object DeviceConfig    : Screen("device_config/{homeId}") {
+        fun createRoute(homeId: Int) = "device_config/$homeId"
+    }
+    object SystemTraining  : Screen("system_training/{homeId}") {
+        fun createRoute(homeId: Int) = "system_training/$homeId"
+    }
+    object Profile         : Screen("profile")
+    object Routines        : Screen("routines")
 }
 
 @Composable
 fun NavGraph(navController: NavHostController = rememberNavController()) {
     val context = LocalContext.current
     val authRepository = AuthRepository(context)
+    val homeRepository = HomeRepository()
+
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(authRepository)
     )
@@ -52,8 +67,8 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         composable(Screen.Login.route) {
             LoginScreen(
                 viewModel = authViewModel,
-                onLoginSuccess = {
-                    navController.navigate(Screen.Home.route) {
+                onLoginSuccess = { homeId ->
+                    navController.navigate(Screen.Home.createRoute(homeId)) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -72,8 +87,8 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         composable(Screen.Register.route) {
             RegisterScreen(
                 viewModel = authViewModel,
-                onRegisterSuccess = {
-                    navController.navigate(Screen.Home.route) {
+                onRegisterSuccess = { homeId ->
+                    navController.navigate(Screen.Home.createRoute(homeId)) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 },
@@ -91,8 +106,45 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
             )
         }
 
-        composable(Screen.Home.route) {
-            HomeScreen()
+        composable(Screen.Home.route) { backStackEntry ->
+            val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
+            val homeViewModel: HomeViewModel = viewModel(
+                factory = HomeViewModelFactory(homeRepository)
+            )
+            HomeScreen(
+                viewModel = homeViewModel,
+                homeId = homeId,
+                onNavigateToDeviceConfig = {
+                    navController.navigate(Screen.DeviceConfig.createRoute(homeId))
+                },
+                onNavigateToSystemTraining = {
+                    navController.navigate(Screen.SystemTraining.createRoute(homeId))
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Screen.Profile.route)
+                },
+                onNavigateToRoutines = {
+                    navController.navigate(Screen.Routines.route)
+                }
+            )
+        }
+
+        composable(Screen.DeviceConfig.route) { backStackEntry ->
+            val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
+            // TODO: DeviceConfigScreen(homeId = homeId)
+        }
+
+        composable(Screen.SystemTraining.route) { backStackEntry ->
+            val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
+            // TODO: SystemTrainingScreen(homeId = homeId)
+        }
+
+        composable(Screen.Profile.route) {
+            // TODO: ProfileScreen()
+        }
+
+        composable(Screen.Routines.route) {
+            // TODO: RoutinesScreen()
         }
     }
 }

@@ -19,7 +19,7 @@ import com.indoora.app.ui.theme.indooraBackground
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (homeId: Int) -> Unit,
     onNavigateToRegister: () -> Unit = {},
     onNavigateBack: () -> Unit = {}
 ) {
@@ -148,7 +148,14 @@ fun LoginScreen(
                 color = Color(0xFFFFCDD2),
                 fontSize = 13.sp
             )
-            is UiState.Success -> LaunchedEffect(Unit) { onLoginSuccess() }
+            is UiState.Success -> {
+                val homeIdState by viewModel.homeIdState.collectAsState()
+                LaunchedEffect(homeIdState) {
+                    if (homeIdState is UiState.Success) {
+                        onLoginSuccess((homeIdState as UiState.Success<Int>).data)
+                    }
+                }
+            }
             else -> {}
         }
 

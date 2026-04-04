@@ -23,7 +23,7 @@ def refresh(data: RefreshRequest, session: Session = Depends(get_session)):
     return service.refresh(data.refresh_token)
 
 
-@router.get("/me")
+@router.get("/me", response_model=UserRead)
 def me(user = Depends(get_current_user)):
     return user
 

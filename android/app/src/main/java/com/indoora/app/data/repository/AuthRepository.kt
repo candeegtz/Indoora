@@ -15,6 +15,20 @@ import com.indoora.app.network.TokenManager
 class AuthRepository(private val context: Context) {
     private val api = RetrofitClient.api
 
+    suspend fun getMe(): Result<UserRead> {
+        return try {
+            val response = api.getMe()
+            if (response.isSuccessful) {
+                response.body()?.let { Result.success(it) }
+                    ?: Result.failure(Exception("Empty response"))
+            } else {
+                Result.failure(Exception("Error ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun login(username: String, password: String): Result<LoginResponse> {
         return try {
             val response = api.login(LoginRequest(username, password))
