@@ -13,6 +13,7 @@ import com.indoora.app.feature.auth.AuthViewModel
 import com.indoora.app.feature.auth.AuthViewModelFactory
 import com.indoora.app.feature.auth.LoginScreen
 import com.indoora.app.feature.auth.RegisterScreen
+import com.indoora.app.feature.deviceconfig.DeviceConfigScreen
 import com.indoora.app.feature.home.HomeScreen
 import com.indoora.app.feature.home.HomeViewModel
 import com.indoora.app.feature.home.HomeViewModelFactory
@@ -131,7 +132,12 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
 
         composable(Screen.DeviceConfig.route) { backStackEntry ->
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
-            // TODO: DeviceConfigScreen(homeId = homeId)
+            DeviceConfigScreen(
+                homeId = homeId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
 
         composable(Screen.SystemTraining.route) { backStackEntry ->
