@@ -31,6 +31,9 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     private val _createPositionsState = MutableStateFlow<UiState<Boolean>>(UiState.Idle)
     val createPositionsState: StateFlow<UiState<Boolean>> = _createPositionsState
 
+    private val _homeIdState = MutableStateFlow<UiState<Int>>(UiState.Idle)
+    val homeIdState: StateFlow<UiState<Int>> = _homeIdState
+
     // Mapa para trackear rooms creadas en backend (roomLocalId -> roomBackendId)
     private val createdRoomsMap = mutableMapOf<String, Int>()
 
@@ -42,6 +45,10 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                 onSuccess = { UiState.Success(it) },
                 onFailure = { UiState.Error(it.message ?: "Unknown error") }
             )
+
+            if (result.isSuccess) {
+                fetchMyHomeId()
+            }
         }
     }
 
@@ -57,12 +64,28 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                     onSuccess = { UiState.Success(it) },
                     onFailure = { UiState.Error(it.message ?: "Login failed after registration") }
                 )
+
+                if (loginResult.isSuccess) {
+                    fetchMyHomeId()
+                }
             } else {
                 _registerAndLoginState.value = UiState.Error(
                     registerResult.exceptionOrNull()?.message ?: "Registration failed"
                 )
             }
         }
+    }
+
+    private suspend fun fetchMyHomeId() {
+        _homeIdState.value = UiState.Loading
+        val result = repository.getMe()
+        _homeIdState.value = result.fold(
+            onSuccess = { user ->
+                user.homeId?.let { UiState.Success(it) }
+                    ?: UiState.Error("Usuario sin hogar asignado")
+            },
+            onFailure = { UiState.Error(it.message ?: "Error obteniendo usuario") }
+        )
     }
 
     fun createSubject(data: UserCreate) {
@@ -73,6 +96,9 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                 onSuccess = { UiState.Success(it) },
                 onFailure = { UiState.Error(it.message ?: "Unknown error") }
             )
+            if (result.isSuccess) {
+                fetchMyHomeId()
+            }
         }
     }
 
@@ -179,6 +205,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
     fun resetLoginState() {
         _loginState.value = UiState.Idle
+        _homeIdState.value = UiState.Idle
     }
 
     fun resetRegisterState() {
@@ -186,6 +213,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         _createSubjectState.value = UiState.Idle
         _createRoomsState.value = UiState.Idle
         _createPositionsState.value = UiState.Idle
+        _homeIdState.value = UiState.Idle
     }
 }
 

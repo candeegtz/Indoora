@@ -47,50 +47,119 @@ fun RegisterHeader(step: RegisterStep, onBack: () -> Unit) {
 
 @Composable
 fun StepIndicator(currentStep: RegisterStep, isSupervisorCreator: Boolean) {
+    val commonSteps = listOf(
+        RegisterStep.CHOOSE_TYPE  to "Tipo",
+        RegisterStep.FILL_FORM    to "Datos",
+        RegisterStep.HOME_SETUP   to "Hogar"
+    )
+
+    val creatorSteps = listOf(
+        RegisterStep.CREATE_SUBJECT  to "Sujeto",
+        RegisterStep.ADD_ROOMS       to "Habitaciones",
+        RegisterStep.ADD_POSITIONS   to "Posiciones",
+        RegisterStep.CONFIRM_SETUP   to "Confirmar"
+    )
+
+    val allSteps = if (isSupervisorCreator) commonSteps + creatorSteps else commonSteps
+
+    val currentIndex = allSteps.indexOfFirst { it.first == currentStep }
+
+    val visibleSteps = when {
+        currentIndex <= 0 -> {
+            allSteps.take(3.coerceAtMost(allSteps.size))
+        }
+        currentIndex >= allSteps.lastIndex -> {
+            allSteps.takeLast(3.coerceAtMost(allSteps.size))
+        }
+        else -> {
+            allSteps.subList(
+                (currentIndex - 1).coerceAtLeast(0),
+                (currentIndex + 2).coerceAtMost(allSteps.size)
+            )
+        }
+    }
+
+    val hasStepsBefore = currentIndex > 1
+    val hasStepsAfter = currentIndex < allSteps.lastIndex - 1
+
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        StepDot(active = currentStep.ordinal >= RegisterStep.CHOOSE_TYPE.ordinal, label = "Tipo")
-        StepDivider()
-        StepDot(active = currentStep.ordinal >= RegisterStep.FILL_FORM.ordinal, label = "Datos")
-        StepDivider()
-        StepDot(active = currentStep.ordinal >= RegisterStep.HOME_SETUP.ordinal, label = "Hogar")
-        if (isSupervisorCreator){
-            StepDivider()
-            StepDot(active = currentStep.ordinal >= RegisterStep.CREATE_SUBJECT.ordinal, label = "Sujeto")
-            StepDivider()
+        if (hasStepsBefore) {
+            Text(
+                text = "···",
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+        }
+
+        visibleSteps.forEachIndexed { index, (stepEnum, label) ->
+            val isActive = currentStep.ordinal >= stepEnum.ordinal
+            val isCurrent = currentStep == stepEnum
+
+            StepDot(
+                active = isActive,
+                current = isCurrent,
+                label = label
+            )
+
+            if (index < visibleSteps.lastIndex) {
+                StepDivider(active = currentStep.ordinal > stepEnum.ordinal)
+            }
+        }
+
+        if (hasStepsAfter) {
+            Text(
+                text = "···",
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 8.dp)
+            )
         }
     }
 }
 
 @Composable
-private fun StepDot(active: Boolean, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun StepDot(active: Boolean, current: Boolean, label: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Box(
             modifier = Modifier
-                .size(12.dp)
+                .size(if (current) 16.dp else 10.dp)
                 .clip(RoundedCornerShape(50))
                 .background(
-                    if (active) MaterialTheme.colorScheme.onBackground
-                    else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
+                    when {
+                        current -> MaterialTheme.colorScheme.onBackground
+                        active  -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        else    -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f)
+                    }
                 )
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
-            color = if (active) MaterialTheme.colorScheme.onBackground
-            else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-            fontSize = 11.sp
+            color = when {
+                current -> MaterialTheme.colorScheme.onBackground
+                active  -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                else    -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
+            },
+            fontSize = if (current) 11.sp else 9.sp,
+            fontWeight = if (current) FontWeight.Bold else FontWeight.Normal
         )
     }
 }
 
 @Composable
-private fun StepDivider() {
+private fun StepDivider(active: Boolean = false) {
     HorizontalDivider(
-        modifier = Modifier.width(32.dp),
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+        modifier = Modifier.width(20.dp),
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = if (active) 0.6f else 0.25f),
         thickness = 1.dp
     )
 }

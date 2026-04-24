@@ -5,6 +5,10 @@ from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped
 
+class EstadoConfig(str, enum.Enum):
+    NOT_CONFIG = "NOT_CONFIG"
+    ONLY_DEVICES_CONFIG = "ONLY_DEVICES_CONFIG"
+    CONFIG_COMPLETED = "CONFIG_COMPLETED"
 
 class UserType(str, enum.Enum):
     ADMIN = "ADMIN"
@@ -46,6 +50,11 @@ class ActivityPosition(SQLModel, table=True):
 class Home(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
+
+    estado_config: EstadoConfig = Field(
+        default=EstadoConfig.NOT_CONFIG,
+        sa_column_kwargs={"nullable": False}
+    )
 
     users: Mapped[List["User"]] = Relationship(back_populates="home")
 

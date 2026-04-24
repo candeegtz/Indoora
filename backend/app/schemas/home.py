@@ -1,5 +1,5 @@
 from __future__ import annotations
-from app.models.models import RoomType
+from app.models.models import EstadoConfig, RoomType
 from sqlmodel import SQLModel, Field
 from typing import Optional, List
 from pydantic import ConfigDict
@@ -9,6 +9,11 @@ from pydantic import ConfigDict
 
 class HomeBase(SQLModel):
     name: str
+    estado_config: EstadoConfig = Field(
+        default=EstadoConfig.NOT_CONFIG,
+        alias="estadoConfig"
+    )
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class HomeCreate(HomeBase):
@@ -16,15 +21,22 @@ class HomeCreate(HomeBase):
     Creado automáticamente cuando se registra un Supervisor.
     El subject_id se asigna en el backend según el supervisor.
     """
+    model_config = ConfigDict(populate_by_name=True)
     pass
 
 
 class HomeUpdate(SQLModel):
     name: Optional[str] = None
+    estado_config: Optional[EstadoConfig] = Field(
+        default=None,
+        alias="estadoConfig"
+    )
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class HomeRead(HomeBase):
     id: int
+    model_config = ConfigDict(populate_by_name=True)
     
 
 # ------------Room------------
