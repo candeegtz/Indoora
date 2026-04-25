@@ -1,3 +1,4 @@
+// feature/activities/ActivitiesViewModel.kt
 package com.indoora.app.feature.activities
 
 import androidx.lifecycle.ViewModel
@@ -11,11 +12,13 @@ import com.indoora.app.feature.auth.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ActivitiesViewModel(
     private val activityRepository: ActivityRepository,
-    private val homeRepository: HomeRepository
+    private val homeRepository: HomeRepository,
+    private val homeId: Int               // ← Recibimos homeId desde NavGraph
 ) : ViewModel() {
 
     // Estados para actividades
@@ -38,73 +41,70 @@ class ActivitiesViewModel(
     private val _positionsState = MutableStateFlow<Map<Int, UiState<List<PositionRead>>>>(emptyMap())
     val positionsState: StateFlow<Map<Int, UiState<List<PositionRead>>>> = _positionsState.asStateFlow()
 
-    // ========== Operaciones con actividades ==========
+    init {
+        // Cargar actividades al instante (como en ProfileViewModel)
+        loadActivities()
+    }
 
-    fun loadActivities(homeId: Int) {
+    // ---------------- Operaciones con actividades ----------------
+
+    fun loadActivities() {
         viewModelScope.launch {
             _activitiesState.value = UiState.Loading
             val result = activityRepository.getActivities(homeId)
             _activitiesState.value = result.fold(
                 onSuccess = { list ->
-                    println("✅ Activities loaded: ${list.size} items") // Debug
+                    println("✅ Actividades cargadas: ${list.size}") // Debug
                     UiState.Success(list)
                 },
                 onFailure = { error ->
-                    println("❌ Error loading activities: ${error.message}") // Debug
+                    println("❌ Error al cargar actividades: ${error.message}")
                     UiState.Error(error.message ?: "Error loading activities")
                 }
             )
         }
     }
 
-    fun createActivity(name: String, homeId: Int, positionIds: List<Int>) {
+    fun createActivity(name: String, positionIds: List<Int>) {
         viewModelScope.launch {
             _createState.value = UiState.Loading
             val result = activityRepository.createActivity(name, homeId, positionIds)
             _createState.value = result.fold(
                 onSuccess = { activity ->
+                    // Recargar la lista después de crear
+                    loadActivities()
                     UiState.Success(activity)
                 },
                 onFailure = { UiState.Error(it.message ?: "Error creating activity") }
             )
-            // ✅ Recargar DESPUÉS de que createState se actualice
-            if (_createState.value is UiState.Success) {
-                loadActivities(homeId)
-            }
         }
     }
 
-    fun updateActivity(activityId: Int, name: String, positionIds: List<Int>, homeId: Int) {
+    fun updateActivity(activityId: Int, name: String, positionIds: List<Int>) {
         viewModelScope.launch {
             _updateState.value = UiState.Loading
             val result = activityRepository.updateActivity(activityId, name, positionIds)
             _updateState.value = result.fold(
                 onSuccess = { activity ->
+                    loadActivities()
                     UiState.Success(activity)
                 },
                 onFailure = { UiState.Error(it.message ?: "Error updating activity") }
             )
-            // ✅ Recargar DESPUÉS de que updateState se actualice
-            if (_updateState.value is UiState.Success) {
-                loadActivities(homeId)
-            }
         }
     }
 
-    fun deleteActivity(activityId: Int, homeId: Int) {
+    fun deleteActivity(activityId: Int) {
         viewModelScope.launch {
             _deleteState.value = UiState.Loading
             val result = activityRepository.deleteActivity(activityId)
             _deleteState.value = result.fold(
                 onSuccess = {
+                    loadActivities()
                     UiState.Success(true)
                 },
                 onFailure = { UiState.Error(it.message ?: "Error deleting activity") }
             )
-            // ✅ Recargar DESPUÉS de que deleteState se actualice
-            if (_deleteState.value is UiState.Success) {
-                loadActivities(homeId)
-            }
         }
     }
 
@@ -112,9 +112,9 @@ class ActivitiesViewModel(
     fun resetUpdateState() { _updateState.value = UiState.Idle }
     fun resetDeleteState() { _deleteState.value = UiState.Idle }
 
-    // ========== Carga de habitaciones y posiciones ==========
+    // ---------------- Carga de habitaciones y posiciones ----------------
 
-    fun loadRoomsAndPositions(homeId: Int) {
+    fun loadRoomsAndPositions() {
         viewModelScope.launch {
             _roomsState.value = UiState.Loading
             val result = homeRepository.getRooms(homeId)
@@ -130,17 +130,14 @@ class ActivitiesViewModel(
 
     private fun loadPositionsForRoom(roomId: Int) {
         viewModelScope.launch {
-            val currentMap = _positionsState.value.toMutableMap()
-            currentMap[roomId] = UiState.Loading
-            _positionsState.value = currentMap
-
+            _positionsState.update { current -> current + (roomId to UiState.Loading) }
             val result = homeRepository.getPositions(roomId)
-            val newMap = _positionsState.value.toMutableMap()
-            newMap[roomId] = result.fold(
-                onSuccess = { UiState.Success(it) },
-                onFailure = { UiState.Error(it.message ?: "Error loading positions") }
-            )
-            _positionsState.value = newMap
+            _positionsState.update { current ->
+                current + (roomId to result.fold(
+                    onSuccess = { UiState.Success(it) },
+                    onFailure = { UiState.Error(it.message ?: "Error loading positions") }
+                ))
+            }
         }
     }
 }

@@ -159,10 +159,9 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
             val activityRepository = ActivityRepository()
             val homeRepository = HomeRepository()
-            val viewModel = ActivitiesViewModel(activityRepository, homeRepository)
+            val viewModel = ActivitiesViewModel(activityRepository, homeRepository, homeId)
             ActivitiesScreen(
                 viewModel = viewModel,
-                homeId = homeId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

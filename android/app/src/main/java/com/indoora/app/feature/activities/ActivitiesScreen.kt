@@ -1,3 +1,4 @@
+// feature/activities/ActivitiesScreen.kt
 package com.indoora.app.feature.activities
 
 import androidx.compose.animation.*
@@ -29,49 +30,31 @@ import kotlinx.coroutines.delay
 @Composable
 fun ActivitiesScreen(
     viewModel: ActivitiesViewModel,
-    homeId: Int,
     onNavigateBack: () -> Unit
 ) {
-    val activitiesState by viewModel.activitiesState.collectAsState()
-    val createState by viewModel.createState.collectAsState()
-    val updateState by viewModel.updateState.collectAsState()
-    val deleteState by viewModel.deleteState.collectAsState()
+    // Observar estados
+    val activitiesState by viewModel.activitiesState.collectAsStateWithLifecycle()
+    val createState by viewModel.createState.collectAsStateWithLifecycle()
+    val updateState by viewModel.updateState.collectAsStateWithLifecycle()
+    val deleteState by viewModel.deleteState.collectAsStateWithLifecycle()
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var editingActivity by remember { mutableStateOf<ActivityRead?>(null) }
     var deletingActivity by remember { mutableStateOf<ActivityRead?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    LaunchedEffect(homeId) {
-        println("🔄 Loading activities for home: $homeId") // Debug
-        viewModel.loadActivities(homeId)
-    }
-
+    // Limpiar mensajes después de un tiempo
     LaunchedEffect(createState, updateState, deleteState) {
         when {
             createState is UiState.Success || createState is UiState.Error -> {
-                kotlinx.coroutines.delay(3000)
-                viewModel.resetCreateState()
+                delay(3000); viewModel.resetCreateState()
             }
             updateState is UiState.Success || updateState is UiState.Error -> {
-                kotlinx.coroutines.delay(3000)
-                viewModel.resetUpdateState()
+                delay(3000); viewModel.resetUpdateState()
             }
             deleteState is UiState.Success || deleteState is UiState.Error -> {
-                kotlinx.coroutines.delay(3000)
-                viewModel.resetDeleteState()
+                delay(3000); viewModel.resetDeleteState()
             }
-        }
-    }
-
-    // ✅ Debug - Ver qué estado tiene
-    LaunchedEffect(activitiesState) {
-        println("📊 Activities state changed: $activitiesState")
-        when (val state = activitiesState) {
-            is UiState.Success -> println("   ✅ Success with ${state.data.size} activities")
-            is UiState.Error -> println("   ❌ Error: ${state.message}")
-            is UiState.Loading -> println("   ⏳ Loading...")
-            else -> println("   ⚪ Idle")
         }
     }
 
@@ -116,16 +99,14 @@ fun ActivitiesScreen(
         ) {
             when (val state = activitiesState) {
                 is UiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onBackground)
                     }
                 }
                 is UiState.Success -> {
                     val activities = state.data
                     if (activities.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     "No hay actividades creadas",
@@ -160,7 +141,7 @@ fun ActivitiesScreen(
                     }
                 }
                 is UiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "Error al cargar actividades",
@@ -168,30 +149,28 @@ fun ActivitiesScreen(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(Modifier.height(8.dp))
                             Text(
                                 text = state.message,
                                 color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
                                 fontSize = 14.sp
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(Modifier.height(16.dp))
                             Button(
-                                onClick = { viewModel.loadActivities(homeId) },
+                                onClick = { viewModel.loadActivities() },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
                                 )
                             ) {
-                                Text("Reintentar")
+                                Text("Reintentar", color = MaterialTheme.colorScheme.onBackground)
                             }
                         }
                     }
                 }
                 else -> {
-                    // Idle - Mostrar loading
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                    // Idle - Mostrar loading (no debería ocurrir)
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onBackground)
                     }
                 }
             }
@@ -200,7 +179,6 @@ fun ActivitiesScreen(
             if (showCreateDialog) {
                 CreateActivityDialog(
                     viewModel = viewModel,
-                    homeId = homeId,
                     onDismiss = { showCreateDialog = false }
                 )
             }
@@ -209,7 +187,6 @@ fun ActivitiesScreen(
                 EditActivityDialog(
                     viewModel = viewModel,
                     activity = activity,
-                    homeId = homeId,
                     onDismiss = { editingActivity = null }
                 )
             }
@@ -237,7 +214,7 @@ fun ActivitiesScreen(
                         TextButton(
                             onClick = {
                                 deletingActivity?.let { act ->
-                                    viewModel.deleteActivity(act.id, homeId)
+                                    viewModel.deleteActivity(act.id)
                                 }
                                 showDeleteConfirm = false
                                 deletingActivity = null
@@ -262,7 +239,7 @@ fun ActivitiesScreen(
                             )
                         }
                     },
-                    containerColor = Color(0xFF4A4458), // Color sólido
+                    containerColor = Color(0xFF4A4458),
                     shape = RoundedCornerShape(16.dp)
                 )
             }
@@ -282,14 +259,9 @@ fun ActivitiesScreen(
                 val isError = createState is UiState.Error ||
                         updateState is UiState.Error ||
                         deleteState is UiState.Error
-
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isError) {
-                            Color(0xFFCF6679)
-                        } else {
-                            Color(0xFF03DAC6)
-                        }
+                        containerColor = if (isError) Color(0xFFCF6679) else Color(0xFF03DAC6)
                     ),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -307,6 +279,7 @@ fun ActivitiesScreen(
     }
 }
 
+// -------------------- Componentes auxiliares (sin cambios relevantes) --------------------
 @Composable
 fun ActivityCard(
     activity: ActivityRead,
@@ -316,23 +289,19 @@ fun ActivityCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.2f)
-        )
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.2f))
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = activity.name,
+                activity.name,
+                Modifier.weight(1f),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
-                color = Color.White,
-                modifier = Modifier.weight(1f)
+                color = Color.White
             )
             Row {
                 IconButton(onClick = onEditClick) {
@@ -349,18 +318,17 @@ fun ActivityCard(
 @Composable
 fun CreateActivityDialog(
     viewModel: ActivitiesViewModel,
-    homeId: Int,
     onDismiss: () -> Unit
 ) {
     var activityName by remember { mutableStateOf("") }
-    val roomsState by viewModel.roomsState.collectAsState()
-    val positionsState by viewModel.positionsState.collectAsState()
-    val createState by viewModel.createState.collectAsState()
+    val roomsState by viewModel.roomsState.collectAsStateWithLifecycle()
+    val positionsState by viewModel.positionsState.collectAsStateWithLifecycle()
+    val createState by viewModel.createState.collectAsStateWithLifecycle()
     var selectedPositionIds by remember { mutableStateOf(emptySet<Int>()) }
     var expandedRoomId by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
-        viewModel.loadRoomsAndPositions(homeId)
+        viewModel.loadRoomsAndPositions()
     }
 
     LaunchedEffect(createState) {
@@ -376,9 +344,7 @@ fun CreateActivityDialog(
         title = { Text("Nueva actividad", fontWeight = FontWeight.Bold, color = Color.White) },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 500.dp),
+                Modifier.fillMaxWidth().heightIn(max = 500.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedTextField(
@@ -396,85 +362,58 @@ fun CreateActivityDialog(
                     ),
                     textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                 )
-
-                Text(
-                    text = "Posiciones donde ocurre:",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
-                    color = Color.White
-                )
+                Text("Posiciones donde ocurre:", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.White)
 
                 when (roomsState) {
-                    is UiState.Loading -> {
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Color.White)
-                        }
+                    is UiState.Loading -> Box(Modifier.fillMaxWidth(), Alignment.Center) {
+                        CircularProgressIndicator(color = Color.White)
                     }
                     is UiState.Success -> {
                         val rooms = (roomsState as UiState.Success).data
                         if (rooms.isEmpty()) {
                             Text("No hay habitaciones en esta casa", color = Color.White.copy(alpha = 0.6f))
                         } else {
-                            LazyColumn(
-                                modifier = Modifier.heightIn(max = 300.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
+                            LazyColumn(Modifier.heightIn(max = 300.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items(rooms) { room ->
                                     val isExpanded = expandedRoomId == room.id
                                     val positionsUi = positionsState[room.id]
                                     Column {
                                         Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .background(
-                                                    Color.White.copy(alpha = 0.2f),
-                                                    RoundedCornerShape(12.dp)
-                                                )
+                                            Modifier.fillMaxWidth()
+                                                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
                                                 .clickable { expandedRoomId = if (isExpanded) null else room.id }
                                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(
-                                                room.name,
-                                                fontWeight = FontWeight.Medium,
-                                                color = Color.White
-                                            )
+                                            Text(room.name, fontWeight = FontWeight.Medium, color = Color.White)
                                             Icon(
                                                 if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                                contentDescription = if (isExpanded) "Colapsar" else "Expandir",
+                                                null,
                                                 tint = Color.White
                                             )
                                         }
-
                                         AnimatedVisibility(
                                             visible = isExpanded,
-                                            enter = expandVertically(animationSpec = tween(200)) + fadeIn(),
-                                            exit = shrinkVertically(animationSpec = tween(200)) + fadeOut()
+                                            enter = expandVertically(tween(200)) + fadeIn(),
+                                            exit = shrinkVertically(tween(200)) + fadeOut()
                                         ) {
-                                            Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp)) {
+                                            Column(Modifier.padding(start = 16.dp, top = 8.dp)) {
                                                 when (positionsUi) {
                                                     is UiState.Success -> {
                                                         val positions = positionsUi.data
                                                         if (positions.isEmpty()) {
-                                                            Text(
-                                                                "No hay posiciones en esta habitación",
-                                                                fontSize = 12.sp,
-                                                                color = Color.White.copy(alpha = 0.6f)
-                                                            )
+                                                            Text("No hay posiciones en esta habitación", fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
                                                         } else {
                                                             positions.forEach { pos ->
                                                                 Row(
-                                                                    modifier = Modifier.padding(vertical = 4.dp),
+                                                                    Modifier.padding(vertical = 4.dp),
                                                                     verticalAlignment = Alignment.CenterVertically
                                                                 ) {
                                                                     Checkbox(
                                                                         checked = selectedPositionIds.contains(pos.id),
                                                                         onCheckedChange = { isChecked ->
-                                                                            selectedPositionIds = if (isChecked)
-                                                                                selectedPositionIds + pos.id
-                                                                            else
-                                                                                selectedPositionIds - pos.id
+                                                                            selectedPositionIds = if (isChecked) selectedPositionIds + pos.id else selectedPositionIds - pos.id
                                                                         },
                                                                         colors = CheckboxDefaults.colors(
                                                                             checkedColor = Color.White,
@@ -496,12 +435,7 @@ fun CreateActivityDialog(
                             }
                         }
                     }
-                    is UiState.Error -> {
-                        Text(
-                            "Error: ${(roomsState as UiState.Error).message}",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
+                    is UiState.Error -> Text("Error: ${(roomsState as UiState.Error).message}", color = MaterialTheme.colorScheme.error)
                     else -> {}
                 }
             }
@@ -510,23 +444,16 @@ fun CreateActivityDialog(
             TextButton(
                 onClick = {
                     if (activityName.isNotBlank() && selectedPositionIds.isNotEmpty()) {
-                        viewModel.createActivity(activityName, homeId, selectedPositionIds.toList())
+                        viewModel.createActivity(activityName, selectedPositionIds.toList())
                     }
                 },
                 enabled = activityName.isNotBlank() && selectedPositionIds.isNotEmpty() && createState !is UiState.Loading
             ) {
-                if (createState is UiState.Loading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
-                } else {
-                    Text("Crear", color = Color.White)
-                }
+                if (createState is UiState.Loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White)
+                else Text("Crear", color = Color.White)
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = Color.White.copy(alpha = 0.7f))
-            }
-        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.White.copy(alpha = 0.7f)) } },
         containerColor = Color(0xFF4A4458),
         shape = RoundedCornerShape(16.dp)
     )
@@ -536,18 +463,17 @@ fun CreateActivityDialog(
 fun EditActivityDialog(
     viewModel: ActivitiesViewModel,
     activity: ActivityRead,
-    homeId: Int,
     onDismiss: () -> Unit
 ) {
     var activityName by remember { mutableStateOf(activity.name) }
-    val roomsState by viewModel.roomsState.collectAsState()
-    val positionsState by viewModel.positionsState.collectAsState()
-    val updateState by viewModel.updateState.collectAsState()
+    val roomsState by viewModel.roomsState.collectAsStateWithLifecycle()
+    val positionsState by viewModel.positionsState.collectAsStateWithLifecycle()
+    val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     var selectedPositionIds by remember { mutableStateOf(emptySet<Int>()) }
     var expandedRoomId by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
-        viewModel.loadRoomsAndPositions(homeId)
+        viewModel.loadRoomsAndPositions()
     }
 
     LaunchedEffect(updateState) {
@@ -563,9 +489,7 @@ fun EditActivityDialog(
         title = { Text("Editar actividad", fontWeight = FontWeight.Bold, color = Color.White) },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 500.dp),
+                Modifier.fillMaxWidth().heightIn(max = 500.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedTextField(
@@ -583,93 +507,55 @@ fun EditActivityDialog(
                     ),
                     textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                 )
-
-                Text(
-                    text = "Posiciones asociadas:",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
-                    color = Color.White
-                )
+                Text("Posiciones asociadas:", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.White)
 
                 when (roomsState) {
-                    is UiState.Loading -> {
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Color.White)
-                        }
-                    }
+                    is UiState.Loading -> Box(Modifier.fillMaxWidth(), Alignment.Center) { CircularProgressIndicator(color = Color.White) }
                     is UiState.Success -> {
                         val rooms = (roomsState as UiState.Success).data
                         if (rooms.isEmpty()) {
                             Text("No hay habitaciones en esta casa", color = Color.White.copy(alpha = 0.6f))
                         } else {
-                            LazyColumn(
-                                modifier = Modifier.heightIn(max = 300.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
+                            LazyColumn(Modifier.heightIn(max = 300.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items(rooms) { room ->
                                     val isExpanded = expandedRoomId == room.id
                                     val positionsUi = positionsState[room.id]
                                     Column {
                                         Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .background(
-                                                    Color.White.copy(alpha = 0.2f),
-                                                    RoundedCornerShape(12.dp)
-                                                )
+                                            Modifier.fillMaxWidth()
+                                                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
                                                 .clickable { expandedRoomId = if (isExpanded) null else room.id }
                                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(
-                                                room.name,
-                                                fontWeight = FontWeight.Medium,
-                                                color = Color.White
-                                            )
+                                            Text(room.name, fontWeight = FontWeight.Medium, color = Color.White)
                                             Icon(
                                                 if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                                contentDescription = if (isExpanded) "Colapsar" else "Expandir",
+                                                null,
                                                 tint = Color.White
                                             )
                                         }
-
-                                        AnimatedVisibility(
-                                            visible = isExpanded,
-                                            enter = expandVertically(animationSpec = tween(200)) + fadeIn(),
-                                            exit = shrinkVertically(animationSpec = tween(200)) + fadeOut()
-                                        ) {
-                                            Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp)) {
+                                        AnimatedVisibility(visible = isExpanded) {
+                                            Column(Modifier.padding(start = 16.dp, top = 8.dp)) {
                                                 when (positionsUi) {
                                                     is UiState.Success -> {
-                                                        val positions = positionsUi.data
-                                                        if (positions.isEmpty()) {
-                                                            Text(
-                                                                "No hay posiciones en esta habitación",
-                                                                fontSize = 12.sp,
-                                                                color = Color.White.copy(alpha = 0.6f)
-                                                            )
-                                                        } else {
-                                                            positions.forEach { pos ->
-                                                                Row(
-                                                                    modifier = Modifier.padding(vertical = 4.dp),
-                                                                    verticalAlignment = Alignment.CenterVertically
-                                                                ) {
-                                                                    Checkbox(
-                                                                        checked = selectedPositionIds.contains(pos.id),
-                                                                        onCheckedChange = { isChecked ->
-                                                                            selectedPositionIds = if (isChecked)
-                                                                                selectedPositionIds + pos.id
-                                                                            else
-                                                                                selectedPositionIds - pos.id
-                                                                        },
-                                                                        colors = CheckboxDefaults.colors(
-                                                                            checkedColor = Color.White,
-                                                                            uncheckedColor = Color.White.copy(alpha = 0.5f)
-                                                                        )
+                                                        positionsUi.data.forEach { pos ->
+                                                            Row(
+                                                                Modifier.padding(vertical = 4.dp),
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                Checkbox(
+                                                                    checked = selectedPositionIds.contains(pos.id),
+                                                                    onCheckedChange = { isChecked ->
+                                                                        selectedPositionIds = if (isChecked) selectedPositionIds + pos.id else selectedPositionIds - pos.id
+                                                                    },
+                                                                    colors = CheckboxDefaults.colors(
+                                                                        checkedColor = Color.White,
+                                                                        uncheckedColor = Color.White.copy(alpha = 0.5f)
                                                                     )
-                                                                    Text(pos.name, color = Color.White)
-                                                                }
+                                                                )
+                                                                Text(pos.name, color = Color.White)
                                                             }
                                                         }
                                                     }
@@ -683,12 +569,7 @@ fun EditActivityDialog(
                             }
                         }
                     }
-                    is UiState.Error -> {
-                        Text(
-                            "Error: ${(roomsState as UiState.Error).message}",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
+                    is UiState.Error -> Text("Error: ${(roomsState as UiState.Error).message}", color = MaterialTheme.colorScheme.error)
                     else -> {}
                 }
             }
@@ -697,23 +578,16 @@ fun EditActivityDialog(
             TextButton(
                 onClick = {
                     if (activityName.isNotBlank()) {
-                        viewModel.updateActivity(activity.id, activityName, selectedPositionIds.toList(), homeId)
+                        viewModel.updateActivity(activity.id, activityName, selectedPositionIds.toList())
                     }
                 },
                 enabled = activityName.isNotBlank() && updateState !is UiState.Loading
             ) {
-                if (updateState is UiState.Loading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
-                } else {
-                    Text("Guardar", color = Color.White)
-                }
+                if (updateState is UiState.Loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White)
+                else Text("Guardar", color = Color.White)
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = Color.White.copy(alpha = 0.7f))
-            }
-        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.White.copy(alpha = 0.7f)) } },
         containerColor = Color(0xFF4A4458),
         shape = RoundedCornerShape(16.dp)
     )
