@@ -1,11 +1,19 @@
+import os
 import warnings
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-SECRET_KEY = "2f66ead3304a75f1823e5a8494402d08ceb2072e212228e57c07baf9f950a430"
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("No se ha configurado la variable de entorno SECRET_KEY")
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS_DEFAULT = 7
