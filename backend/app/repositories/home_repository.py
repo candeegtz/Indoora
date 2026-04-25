@@ -1,6 +1,8 @@
+from typing import List
+
 from app.models.models import ActivityPosition, Home, Position, Room, Activity, RoomType, User, ROOM_TYPE_LABELS
 from app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
-from sqlmodel import Session, select
+from sqlmodel import Session, select, delete
 
 
 class HomeRepository:
@@ -161,14 +163,24 @@ class HomeRepository:
         if not activity:
             raise ValueError("Activity not found")
 
+        allowed_fields = {"name"}
         update_data = data.model_dump(exclude_unset=True)
-
-        for key, value in update_data.items():
+        filtered = {k: v for k, v in update_data.items() if k in allowed_fields}
+        
+        for key, value in filtered.items():
             setattr(activity, key, value)
-
+        
         self.session.commit()
         self.session.refresh(activity)
         return activity
+    
+    def update_activity_positions(self, activity_id: int, position_ids: List[int]):
+        self.session.exec(
+            delete(ActivityPosition).where(ActivityPosition.activity_id == activity_id)
+        )
+        for pos_id in position_ids:
+            self.session.add(ActivityPosition(activity_id=activity_id, position_id=pos_id))
+        self.session.commit()
 
     def delete_activity(self, activity_id: int):
         activity = self.get_activity_by_id(activity_id)
@@ -180,3 +192,12 @@ class HomeRepository:
 
     def get_activities_by_home_id(self, home_id: int) -> list[Activity]:
         return self.session.exec(select(Activity).where(Activity.home_id == home_id)).all()
+    
+    def get_activity_with_positions(self, activity_id: int) -> tuple[Activity | None, List[int]]:
+        activity = self.session.get(Activity, activity_id)
+        if not activity:
+            return None, []
+
+        stmt = select(ActivityPosition.position_id).where(ActivityPosition.activity_id == activity_id)
+        position_ids = self.session.exec(stmt).all()
+        return activity, position_ids

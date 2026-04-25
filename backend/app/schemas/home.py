@@ -119,3 +119,8 @@ class ActivityRead(ActivityBase):
     home_id: int = Field(alias="homeId")
     
     model_config = ConfigDict(populate_by_name=True)
+
+class ActivityWithPositionsRead(ActivityRead):
+    position_ids: List[int] = Field(default=[], alias="positionIds")
+
+    model_config = ConfigDict(populate_by_name=True)

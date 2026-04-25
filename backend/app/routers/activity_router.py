@@ -1,4 +1,4 @@
-from app.schemas.home import ActivityCreate, ActivityRead, ActivityUpdate
+from app.schemas.home import ActivityCreate, ActivityRead, ActivityUpdate, ActivityWithPositionsRead
 from app.services.home_service import HomeService
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
@@ -16,20 +16,6 @@ def create_activity(
 ):
     repo = HomeService(session)
     return repo.create_activity(data)
-
-
-@router.get("/{activity_id}", response_model=ActivityRead)
-def get_activity(
-    activity_id: int,
-    session: Session = Depends(get_session),
-    user = Depends(get_current_user)
-):
-    repo = HomeService(session)
-    activity = repo.get_activity_by_id(activity_id)
-    if not activity:
-        raise HTTPException(404, "Activity not found")
-    return activity
-
 
 @router.get("/", response_model=list[ActivityRead])
 def get_all_activities(
@@ -70,3 +56,15 @@ def get_activities_by_home(
 ):
     service = HomeService(session)   
     return service.get_activities_by_home_id(home_id)
+
+@router.get("/{activity_id}", response_model=ActivityWithPositionsRead)
+def get_activity(
+    activity_id: int,
+    session: Session = Depends(get_session),
+    current_user = Depends(get_current_user)
+):
+    service = HomeService(session)
+    activity = service.get_activity_with_positions(activity_id)
+    if not activity:
+        raise HTTPException(404, "Activity not found")
+    return activity

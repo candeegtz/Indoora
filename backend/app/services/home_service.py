@@ -115,7 +115,12 @@ class HomeService:
         return activity
 
     def update_activity(self, activity_id: int, data: ActivityUpdate):
-        return self.repo.update_activity(activity_id, data)
+        updated = self.repo.update_activity(activity_id, data)
+        
+        if data.position_ids is not None:
+            self.repo.update_activity_positions(activity_id, data.position_ids)
+        
+        return updated
 
     def delete_activity(self, activity_id: int):
         if not self.repo.get_activity_by_id(activity_id):
@@ -125,3 +130,12 @@ class HomeService:
 
     def get_activities_by_home_id(self, home_id: int):
         return self.repo.get_activities_by_home_id(home_id)
+    
+    def get_activity_with_positions(self, activity_id: int):
+        activity, position_ids = self.repo.get_activity_with_positions(activity_id)
+        if not activity:
+            raise HTTPException(404, "Activity not found")
+        # Construimos el diccionario con los datos de la actividad más los position_ids
+        result = activity.dict()
+        result["position_ids"] = position_ids
+        return result
