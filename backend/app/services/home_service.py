@@ -118,4 +118,10 @@ class HomeService:
         return self.repo.update_activity(activity_id, data)
 
     def delete_activity(self, activity_id: int):
+        if not self.repo.get_activity_by_id(activity_id):
+            raise HTTPException(404, "Activity not found")
+
         self.repo.delete_activity(activity_id)
+
+    def get_activities_by_home_id(self, home_id: int):
+        return self.repo.get_activities_by_home_id(home_id)

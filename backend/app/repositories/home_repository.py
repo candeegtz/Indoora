@@ -1,4 +1,4 @@
-from app.models.models import Home, Position, Room, Activity, RoomType, User, ROOM_TYPE_LABELS
+from app.models.models import ActivityPosition, Home, Position, Room, Activity, RoomType, User, ROOM_TYPE_LABELS
 from app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
 from sqlmodel import Session, select
 
@@ -139,8 +139,13 @@ class HomeRepository:
     # ------------Activity------------
 
     def create_activity(self, data: ActivityCreate) -> Activity:
-        activity = Activity(name=data.name)
+        activity = Activity(name=data.name, home_id=data.home_id)  # home_id también debería guardarse
         self.session.add(activity)
+        self.session.flush()   # para obtener activity.id
+        # Asociar posiciones
+        for pos_id in data.position_ids:
+            activity_position = ActivityPosition(activity_id=activity.id, position_id=pos_id)
+            self.session.add(activity_position)
         self.session.commit()
         self.session.refresh(activity)
         return activity
@@ -172,3 +177,6 @@ class HomeRepository:
 
         self.session.delete(activity)
         self.session.commit()
+
+    def get_activities_by_home_id(self, home_id: int) -> list[Activity]:
+        return self.session.exec(select(Activity).where(Activity.home_id == home_id)).all()

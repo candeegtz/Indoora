@@ -60,3 +60,13 @@ def delete_activity(
     repo = HomeService(session)
     repo.delete_activity(activity_id)
     return {"message": "Activity deleted successfully"}
+
+
+@router.get("/home/{home_id}", response_model=list[ActivityRead])
+def get_activities_by_home(
+    home_id: int,
+    session: Session = Depends(get_session),
+    current_user = Depends(get_current_user)
+):
+    service = HomeService(session)   
+    return service.get_activities_by_home_id(home_id)
