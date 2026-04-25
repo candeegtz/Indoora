@@ -3,6 +3,9 @@ package com.indoora.app.feature.routines
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -63,6 +66,22 @@ fun RoutinesScreen(
         isLoadingActivities = false
     }
 
+    // Cerrar diálogo de creación cuando la operación sea exitosa
+    LaunchedEffect(createState) {
+        if (createState is UiState.Success) {
+            showCreateDialog = false
+            // Opcional: resetear el estado después de un tiempo (ya lo hace el reset en el ViewModel)
+        }
+    }
+
+    // Cerrar diálogo de edición cuando la operación sea exitosa
+    LaunchedEffect(updateState) {
+        if (updateState is UiState.Success) {
+            routineToEdit = null
+        }
+    }
+
+    // Limpiar mensajes después de 3 segundos (ya está)
     LaunchedEffect(createState, updateState, deleteState) {
         if (createState is UiState.Success || createState is UiState.Error) delay(3000)
         if (updateState is UiState.Success || updateState is UiState.Error) delay(3000)
@@ -306,8 +325,6 @@ fun CreateRoutineDialog(
         "MONDAY" to "Lunes", "TUESDAY" to "Martes", "WEDNESDAY" to "Miércoles",
         "THURSDAY" to "Jueves", "FRIDAY" to "Viernes", "SATURDAY" to "Sábado", "SUNDAY" to "Domingo"
     )
-    val firstRowDays = daysOfWeek.take(4)
-    val secondRowDays = daysOfWeek.drop(4)
 
     fun isValidTime(time: String): Boolean = time.matches(Regex("^([01]?[0-9]|2[0-3]):[0-5][0-9]$"))
 
@@ -385,11 +402,12 @@ fun CreateRoutineDialog(
                 }
 
                 Text("Días de la semana", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.height(140.dp),
+                    contentPadding = PaddingValues(4.dp)
                 ) {
-                    firstRowDays.forEach { (key, displayName) ->
+                    items(daysOfWeek) { (key, displayName) ->
                         FilterChip(
                             selected = selectedDays.contains(key),
                             onClick = {
@@ -401,23 +419,7 @@ fun CreateRoutineDialog(
                                 disabledSelectedContainerColor = Color.White.copy(alpha = 0.1f),
                                 containerColor = Color.White.copy(alpha = 0.1f)
                             ),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    secondRowDays.forEach { (key, displayName) ->
-                        FilterChip(
-                            selected = selectedDays.contains(key),
-                            onClick = {
-                                selectedDays = if (selectedDays.contains(key)) selectedDays - key else selectedDays + key
-                            },
-                            label = { Text(displayName, color = if (selectedDays.contains(key)) Color.White else Color.White.copy(alpha = 0.7f)) },
-                            colors = FilterChipDefaults.filterChipColors(/* igual */),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.padding(4.dp).fillMaxWidth()
                         )
                     }
                 }
@@ -516,8 +518,6 @@ fun EditRoutineDialog(
         "MONDAY" to "Lunes", "TUESDAY" to "Martes", "WEDNESDAY" to "Miércoles",
         "THURSDAY" to "Jueves", "FRIDAY" to "Viernes", "SATURDAY" to "Sábado", "SUNDAY" to "Domingo"
     )
-    val firstRowDays = daysOfWeek.take(4)
-    val secondRowDays = daysOfWeek.drop(4)
 
     fun isValidTime(time: String): Boolean = time.matches(Regex("^([01]?[0-9]|2[0-3]):[0-5][0-9]$"))
 
@@ -589,35 +589,24 @@ fun EditRoutineDialog(
                 }
 
                 Text("Días de la semana", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.height(140.dp),
+                    contentPadding = PaddingValues(4.dp)
                 ) {
-                    firstRowDays.forEach { (key, displayName) ->
+                    items(daysOfWeek) { (key, displayName) ->
                         FilterChip(
                             selected = selectedDays.contains(key),
                             onClick = {
                                 selectedDays = if (selectedDays.contains(key)) selectedDays - key else selectedDays + key
                             },
                             label = { Text(displayName, color = if (selectedDays.contains(key)) Color.White else Color.White.copy(alpha = 0.7f)) },
-                            colors = FilterChipDefaults.filterChipColors(/* igual */),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    secondRowDays.forEach { (key, displayName) ->
-                        FilterChip(
-                            selected = selectedDays.contains(key),
-                            onClick = {
-                                selectedDays = if (selectedDays.contains(key)) selectedDays - key else selectedDays + key
-                            },
-                            label = { Text(displayName, color = if (selectedDays.contains(key)) Color.White else Color.White.copy(alpha = 0.7f)) },
-                            colors = FilterChipDefaults.filterChipColors(/* igual */),
-                            modifier = Modifier.weight(1f)
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color.White.copy(alpha = 0.3f),
+                                disabledSelectedContainerColor = Color.White.copy(alpha = 0.1f),
+                                containerColor = Color.White.copy(alpha = 0.1f)
+                            ),
+                            modifier = Modifier.padding(4.dp).fillMaxWidth()
                         )
                     }
                 }
