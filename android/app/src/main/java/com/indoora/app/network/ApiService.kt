@@ -16,11 +16,13 @@ import com.indoora.app.data.model.RoomRead
 import com.indoora.app.data.model.RoutineRead
 import com.indoora.app.data.model.UserCreate
 import com.indoora.app.data.model.UserRead
+import com.indoora.app.data.model.UserUpdate
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 interface ApiService {
 
@@ -37,6 +39,12 @@ interface ApiService {
     // Users
     @POST("users/")
     suspend fun createUser(@Body request: UserCreate): Response<UserRead>
+
+    @PUT("users/{userId}")
+    suspend fun updateUser(
+        @Path("userId") userId: Int,
+        @Body data: UserUpdate
+    ): Response<UserRead>
 
     @GET("users/{id}")
     suspend fun getUserById(@Path("id") id: Int): Response<UserRead>
@@ -66,7 +74,7 @@ interface ApiService {
     suspend fun deletePosition(@Path("id") id: Int): Response<Map<String, String>>
 
     // Activities
-    @POST("homes/activities")
+    @POST("activities")
     suspend fun createActivity(@Body request: ActivityCreate): Response<ActivityRead>
 
     @GET("homes/{homeId}/activities")
@@ -88,4 +96,22 @@ interface ApiService {
     // Routines
     @GET("routines/")
     suspend fun getAllRoutines(): Response<List<RoutineRead>>
+
+    @GET("homes/{home_id}/rooms")
+    suspend fun getRoomsByHomeId(@Path("home_id") homeId: Int): Response<List<RoomRead>>
+
+    @GET("homes/rooms/{room_id}/positions")
+    suspend fun getPositionsByRoomId(@Path("room_id") roomId: Int): Response<List<PositionRead>>
+
+    // Listar actividades de una casa
+    @GET("activities/home/{home_id}")
+    suspend fun getActivitiesByHomeId(@Path("home_id") homeId: Int): Response<List<ActivityRead>>
+
+    // Actualizar actividad (ya existe)
+    @PUT("activities/{activity_id}")
+    suspend fun updateActivity(@Path("activity_id") activityId: Int, @Body request: ActivityCreate): Response<ActivityRead>
+
+    // Eliminar actividad (si quieres)
+    @DELETE("activities/{activity_id}")
+    suspend fun deleteActivity(@Path("activity_id") activityId: Int): Response<Unit>
 }
