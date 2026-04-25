@@ -9,6 +9,7 @@ import com.indoora.app.data.model.RoomCreate
 import com.indoora.app.data.model.RoomRead
 import com.indoora.app.data.model.UserCreate
 import com.indoora.app.data.model.UserRead
+import com.indoora.app.data.model.UserUpdate
 import com.indoora.app.network.RetrofitClient
 import com.indoora.app.network.TokenManager
 
@@ -23,6 +24,32 @@ class AuthRepository(private val context: Context) {
                     ?: Result.failure(Exception("Empty response"))
             } else {
                 Result.failure(Exception("Error ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getCurrentUser(): Result<UserRead> {
+        return try {
+            val response = api.getMe()
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Error ${response.code()}: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateUser(userId: Int, data: UserUpdate): Result<UserRead> {
+        return try {
+            val response = api.updateUser(userId, data)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Error ${response.code()}: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -7,8 +7,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.indoora.app.data.repository.ActivityRepository
 import com.indoora.app.data.repository.AuthRepository
 import com.indoora.app.data.repository.HomeRepository
+import com.indoora.app.feature.activities.ActivitiesScreen
+import com.indoora.app.feature.activities.ActivitiesViewModel
 import com.indoora.app.feature.auth.AuthViewModel
 import com.indoora.app.feature.auth.AuthViewModelFactory
 import com.indoora.app.feature.auth.LoginScreen
@@ -17,6 +20,9 @@ import com.indoora.app.feature.deviceconfig.DeviceConfigScreen
 import com.indoora.app.feature.home.HomeScreen
 import com.indoora.app.feature.home.HomeViewModel
 import com.indoora.app.feature.home.HomeViewModelFactory
+import com.indoora.app.feature.profile.ProfileScreen
+import com.indoora.app.feature.profile.ProfileViewModel
+import com.indoora.app.feature.profile.ProfileViewModelFactory
 import com.indoora.app.feature.splash.SplashScreen
 
 sealed class Screen(val route: String) {
@@ -34,6 +40,10 @@ sealed class Screen(val route: String) {
     }
     object Profile         : Screen("profile")
     object Routines        : Screen("routines")
+
+    object Activities : Screen("activities/{homeId}") {
+        fun createRoute(homeId: Int) = "activities/$homeId"
+    }
 }
 
 @Composable
@@ -44,6 +54,10 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
 
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(authRepository)
+    )
+
+    val profileViewModel: ProfileViewModel = viewModel(
+        factory = ProfileViewModelFactory(authRepository)
     )
 
     NavHost(
@@ -126,7 +140,8 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                 },
                 onNavigateToRoutines = {
                     navController.navigate(Screen.Routines.route)
-                }
+                },
+                onNavigateToActivities = { navController.navigate(Screen.Activities.createRoute(homeId)) }
             )
         }
 
@@ -140,13 +155,30 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
             )
         }
 
+        composable(Screen.Activities.route) { backStackEntry ->
+            val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
+            val activityRepository = ActivityRepository()
+            val homeRepository = HomeRepository()
+            val viewModel = ActivitiesViewModel(activityRepository, homeRepository)
+            ActivitiesScreen(
+                viewModel = viewModel,
+                homeId = homeId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         composable(Screen.SystemTraining.route) { backStackEntry ->
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
             // TODO: SystemTrainingScreen(homeId = homeId)
         }
 
         composable(Screen.Profile.route) {
-            // TODO: ProfileScreen()
+            ProfileScreen(
+                viewModel = profileViewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
 
         composable(Screen.Routines.route) {
