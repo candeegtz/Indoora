@@ -8,8 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,7 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.indoora.app.data.model.ActivityRead
+import com.indoora.app.data.model.RoutineCreate
 import com.indoora.app.data.model.RoutineRead
+import com.indoora.app.data.model.RoutineUpdate
 import com.indoora.app.data.repository.ActivityRepository
 import com.indoora.app.feature.auth.UiState
 import com.indoora.app.ui.theme.indooraBackground
@@ -35,8 +36,41 @@ fun RoutinesScreen(
 ) {
     val routinesState by viewModel.routinesState.collectAsStateWithLifecycle()
     val createState by viewModel.createState.collectAsStateWithLifecycle()
+    val updateState by viewModel.updateState.collectAsStateWithLifecycle()
+    val deleteState by viewModel.deleteState.collectAsStateWithLifecycle()
 
     var showCreateDialog by remember { mutableStateOf(false) }
+    var routineToEdit by remember { mutableStateOf<RoutineRead?>(null) }
+    var routineToDelete by remember { mutableStateOf<RoutineRead?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    // Cargar actividades para mostrar el nombre en lugar del ID
+    val activityRepository = remember { ActivityRepository() }
+    var activities by remember { mutableStateOf<List<ActivityRead>>(emptyList()) }
+    var isLoadingActivities by remember { mutableStateOf(true) }
+    var activityNameMap by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
+
+    LaunchedEffect(Unit) {
+        isLoadingActivities = true
+        val result = activityRepository.getActivities(homeId)
+        result.fold(
+            onSuccess = {
+                activities = it
+                activityNameMap = it.associate { it.id to it.name }
+            },
+            onFailure = { /* manejar error */ }
+        )
+        isLoadingActivities = false
+    }
+
+    LaunchedEffect(createState, updateState, deleteState) {
+        if (createState is UiState.Success || createState is UiState.Error) delay(3000)
+        if (updateState is UiState.Success || updateState is UiState.Error) delay(3000)
+        if (deleteState is UiState.Success || deleteState is UiState.Error) delay(3000)
+        viewModel.resetCreateState()
+        viewModel.resetUpdateState()
+        viewModel.resetDeleteState()
+    }
 
     Scaffold(
         topBar = {
@@ -90,7 +124,15 @@ fun RoutinesScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(routines, key = { it.id }) { routine ->
-                                RoutineCard(routine = routine)
+                                RoutineCard(
+                                    routine = routine,
+                                    activityName = activityNameMap[routine.activityId] ?: "Actividad ${routine.activityId}",
+                                    onEditClick = { routineToEdit = routine },
+                                    onDeleteClick = {
+                                        routineToDelete = routine
+                                        showDeleteConfirm = true
+                                    }
+                                )
                             }
                         }
                     }
@@ -117,21 +159,72 @@ fun RoutinesScreen(
             if (showCreateDialog) {
                 CreateRoutineDialog(
                     homeId = homeId,
+                    existingActivities = activities,
                     onDismiss = { showCreateDialog = false },
-                    onCreate = { name, desc, startTime, endTime, days, activityId ->
-                        viewModel.createRoutine(name, desc, startTime, endTime, days, activityId)
+                    onCreate = { routineCreate ->
+                        viewModel.createRoutine(routineCreate)
                     },
                     isCreating = createState is UiState.Loading
                 )
             }
 
-            val feedback = when (createState) {
-                is UiState.Success -> "Rutina creada correctamente"
-                is UiState.Error -> (createState as UiState.Error).message
+            if (routineToEdit != null) {
+                EditRoutineDialog(
+                    routine = routineToEdit!!,
+                    existingActivities = activities,
+                    onDismiss = { routineToEdit = null },
+                    onUpdate = { routineUpdate ->
+                        viewModel.updateRoutine(routineToEdit!!.id, routineUpdate)
+                    },
+                    isUpdating = updateState is UiState.Loading
+                )
+            }
+
+            if (showDeleteConfirm && routineToDelete != null) {
+                AlertDialog(
+                    onDismissRequest = {
+                        showDeleteConfirm = false
+                        routineToDelete = null
+                    },
+                    title = { Text("Eliminar rutina", color = Color.White) },
+                    text = { Text("¿Estás seguro de que quieres eliminar \"${routineToDelete?.name}\"?", color = Color.White.copy(alpha = 0.8f)) },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                routineToDelete?.let { viewModel.deleteRoutine(it.id) }
+                                showDeleteConfirm = false
+                                routineToDelete = null
+                            }
+                        ) {
+                            Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                showDeleteConfirm = false
+                                routineToDelete = null
+                            }
+                        ) {
+                            Text("Cancelar", color = Color.White.copy(alpha = 0.7f))
+                        }
+                    },
+                    containerColor = Color(0xFF4A4458),
+                    shape = RoundedCornerShape(16.dp)
+                )
+            }
+
+            val feedback = when {
+                createState is UiState.Success -> "Rutina creada correctamente"
+                createState is UiState.Error -> (createState as UiState.Error).message
+                updateState is UiState.Success -> "Rutina actualizada correctamente"
+                updateState is UiState.Error -> (updateState as UiState.Error).message
+                deleteState is UiState.Success -> "Rutina eliminada correctamente"
+                deleteState is UiState.Error -> (deleteState as UiState.Error).message
                 else -> null
             }
             feedback?.let {
-                val isError = createState is UiState.Error
+                val isError = createState is UiState.Error || updateState is UiState.Error || deleteState is UiState.Error
                 Card(
                     colors = CardDefaults.cardColors(containerColor = if (isError) Color(0xFFCF6679) else Color(0xFF03DAC6)),
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
@@ -144,7 +237,12 @@ fun RoutinesScreen(
 }
 
 @Composable
-fun RoutineCard(routine: RoutineRead) {
+fun RoutineCard(
+    routine: RoutineRead,
+    activityName: String,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
     val spanishDays = mapOf(
         "MONDAY" to "Lunes", "TUESDAY" to "Martes", "WEDNESDAY" to "Miércoles",
         "THURSDAY" to "Jueves", "FRIDAY" to "Viernes", "SATURDAY" to "Sábado", "SUNDAY" to "Domingo"
@@ -154,22 +252,35 @@ fun RoutineCard(routine: RoutineRead) {
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.2f))
     ) {
-        Column(
-            Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(routine.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
-            routine.description?.let {
-                Text(it, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(routine.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                routine.description?.let {
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
+                }
+                Text(
+                    "Horario: ${routine.startTime.take(5)} - ${routine.endTime.take(5)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+                val daysText = routine.days.mapNotNull { spanishDays[it] }.joinToString(", ")
+                Text("Días: $daysText", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                Text("Actividad: $activityName", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
             }
-            Text(
-                "Horario: ${routine.startTime.take(5)} - ${routine.endTime.take(5)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.7f)
-            )
-            val daysText = routine.days.mapNotNull { spanishDays[it] }.joinToString(", ")
-            Text("Días: $daysText", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
-            Text("Actividad ID: ${routine.activityId}", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
+            Row {
+                IconButton(onClick = onEditClick) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color.White)
+                }
+                IconButton(onClick = onDeleteClick) {
+                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.White)
+                }
+            }
         }
     }
 }
@@ -178,8 +289,9 @@ fun RoutineCard(routine: RoutineRead) {
 @Composable
 fun CreateRoutineDialog(
     homeId: Int,
+    existingActivities: List<ActivityRead>,
     onDismiss: () -> Unit,
-    onCreate: (name: String, description: String?, startTime: String, endTime: String, days: List<String>, activityId: Int) -> Unit,
+    onCreate: (RoutineCreate) -> Unit,
     isCreating: Boolean
 ) {
     var name by remember { mutableStateOf("") }
@@ -188,25 +300,7 @@ fun CreateRoutineDialog(
     var endTime by remember { mutableStateOf("09:00") }
     var selectedDays by remember { mutableStateOf(emptySet<String>()) }
     var selectedActivityId by remember { mutableStateOf<Int?>(null) }
-    var dropdownExpanded by remember { mutableStateOf(false) }
-
-    val activityRepository = remember { ActivityRepository() }
-    var activities by remember { mutableStateOf<List<ActivityRead>>(emptyList()) }
-    var isLoadingActivities by remember { mutableStateOf(true) }
-    var loadError by remember { mutableStateOf<String?>(null) }
-    var reloadTrigger by remember { mutableStateOf(0) }
-
-    // Cargar actividades al abrir el diálogo o cuando se reintente
-    LaunchedEffect(reloadTrigger) {
-        isLoadingActivities = true
-        loadError = null
-        val result = activityRepository.getActivities(homeId)
-        result.fold(
-            onSuccess = { activities = it },
-            onFailure = { loadError = it.message ?: "Error al cargar actividades" }
-        )
-        isLoadingActivities = false
-    }
+    var expanded by remember { mutableStateOf(false) }
 
     val daysOfWeek = listOf(
         "MONDAY" to "Lunes", "TUESDAY" to "Martes", "WEDNESDAY" to "Miércoles",
@@ -229,8 +323,7 @@ fun CreateRoutineDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
+                    value = name, onValueChange = { name = it },
                     label = { Text("Nombre", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -244,8 +337,7 @@ fun CreateRoutineDialog(
                     textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                 )
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = description, onValueChange = { description = it },
                     label = { Text("Descripción (opcional)", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(/* igual */),
@@ -331,68 +423,42 @@ fun CreateRoutineDialog(
                 }
 
                 Text("Actividad", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-
-                when {
-                    isLoadingActivities -> {
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                        }
-                    }
-                    loadError != null -> {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(loadError!!, color = Color.Red, fontSize = 12.sp)
-                            Spacer(Modifier.height(4.dp))
-                            Button(
-                                onClick = { reloadTrigger++ },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f))
-                            ) {
-                                Text("Reintentar", color = Color.White)
+                Box {
+                    OutlinedTextField(
+                        value = selectedActivityId?.let { id ->
+                            existingActivities.find { it.id == id }?.name ?: ""
+                        } ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Selecciona una actividad", color = Color.White.copy(alpha = 0.7f)) },
+                        trailingIcon = {
+                            IconButton(onClick = { expanded = !expanded }) {
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Abrir", tint = Color.White)
                             }
-                        }
-                    }
-                    activities.isEmpty() -> {
-                        Text("No hay actividades en esta casa", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
-                    }
-                    else -> {
-                        // Usamos un DropdownMenu estándar en lugar de ExposedDropdownMenuBox
-                        Column {
-                            OutlinedTextField(
-                                value = selectedActivityId?.let { id ->
-                                    activities.find { it.id == id }?.name ?: ""
-                                } ?: "",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Selecciona una actividad", color = Color.White.copy(alpha = 0.7f)) },
-                                trailingIcon = {
-                                    IconButton(onClick = { dropdownExpanded = !dropdownExpanded }) {
-                                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Abrir menú", tint = Color.White)
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color.White,
-                                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                                    cursorColor = Color.White,
-                                    focusedLabelColor = Color.White,
-                                    unfocusedLabelColor = Color.White.copy(alpha = 0.6f)
-                                ),
-                                textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
-                            )
-                            DropdownMenu(
-                                expanded = dropdownExpanded,
-                                onDismissRequest = { dropdownExpanded = false },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                activities.forEach { activity ->
-                                    DropdownMenuItem(
-                                        text = { Text(activity.name, color = Color.White) },
-                                        onClick = {
-                                            selectedActivityId = activity.id
-                                            dropdownExpanded = false
-                                        }
-                                    )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
+                            cursorColor = Color.White,
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.6f)
+                        ),
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                    )
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        existingActivities.forEach { activity ->
+                            DropdownMenuItem(
+                                text = { Text(activity.name, color = Color.White) },
+                                onClick = {
+                                    selectedActivityId = activity.id
+                                    expanded = false
                                 }
-                            }
+                            )
                         }
                     }
                 }
@@ -402,20 +468,213 @@ fun CreateRoutineDialog(
             TextButton(
                 onClick = {
                     if (name.isNotBlank() && selectedDays.isNotEmpty() && selectedActivityId != null && isValidTime(startTime) && isValidTime(endTime)) {
-                        onCreate(
-                            name,
-                            description.takeIf { it.isNotBlank() },
-                            startTime,
-                            endTime,
-                            selectedDays.toList(),
-                            selectedActivityId!!
+                        val routineCreate = RoutineCreate(
+                            name = name,
+                            description = description.takeIf { it.isNotBlank() },
+                            startTime = startTime,
+                            endTime = endTime,
+                            days = selectedDays.toList(),
+                            activityId = selectedActivityId!!
                         )
+                        onCreate(routineCreate)
                     }
                 },
-                enabled = !isCreating && name.isNotBlank() && selectedDays.isNotEmpty() && selectedActivityId != null && isValidTime(startTime) && isValidTime(endTime) && !isLoadingActivities
+                enabled = !isCreating && name.isNotBlank() && selectedDays.isNotEmpty() && selectedActivityId != null && isValidTime(startTime) && isValidTime(endTime)
             ) {
                 if (isCreating) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White)
                 else Text("Crear", color = Color.White)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = Color.White.copy(alpha = 0.7f))
+            }
+        },
+        containerColor = Color(0xFF4A4458),
+        shape = RoundedCornerShape(16.dp)
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditRoutineDialog(
+    routine: RoutineRead,
+    existingActivities: List<ActivityRead>,
+    onDismiss: () -> Unit,
+    onUpdate: (RoutineUpdate) -> Unit,
+    isUpdating: Boolean
+) {
+    var name by remember { mutableStateOf(routine.name) }
+    var description by remember { mutableStateOf(routine.description ?: "") }
+    var startTime by remember { mutableStateOf(routine.startTime.take(5)) }
+    var endTime by remember { mutableStateOf(routine.endTime.take(5)) }
+    var selectedDays by remember { mutableStateOf(routine.days.toSet()) }
+    var selectedActivityId by remember { mutableStateOf(routine.activityId) }
+    var expanded by remember { mutableStateOf(false) }
+
+    val daysOfWeek = listOf(
+        "MONDAY" to "Lunes", "TUESDAY" to "Martes", "WEDNESDAY" to "Miércoles",
+        "THURSDAY" to "Jueves", "FRIDAY" to "Viernes", "SATURDAY" to "Sábado", "SUNDAY" to "Domingo"
+    )
+    val firstRowDays = daysOfWeek.take(4)
+    val secondRowDays = daysOfWeek.drop(4)
+
+    fun isValidTime(time: String): Boolean = time.matches(Regex("^([01]?[0-9]|2[0-3]):[0-5][0-9]$"))
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar rutina", fontWeight = FontWeight.Bold, color = Color.White) },
+        text = {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 500.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = name, onValueChange = { name = it },
+                    label = { Text("Nombre", color = Color.White.copy(alpha = 0.7f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                )
+                OutlinedTextField(
+                    value = description, onValueChange = { description = it },
+                    label = { Text("Descripción (opcional)", color = Color.White.copy(alpha = 0.7f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = startTime,
+                        onValueChange = { newValue ->
+                            if (newValue.length <= 5) {
+                                var filtered = newValue.filter { it.isDigit() || it == ':' }
+                                if (filtered.length == 2 && !filtered.contains(":")) filtered += ":"
+                                if (filtered.length <= 5) startTime = filtered
+                            }
+                        },
+                        label = { Text("Hora inicio (HH:MM)", color = Color.White.copy(alpha = 0.7f)) },
+                        isError = startTime.isNotBlank() && !isValidTime(startTime),
+                        supportingText = {
+                            if (startTime.isNotBlank() && !isValidTime(startTime))
+                                Text("Formato HH:MM (24h)", color = Color.Red, fontSize = 10.sp)
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                    )
+                    OutlinedTextField(
+                        value = endTime,
+                        onValueChange = { newValue ->
+                            if (newValue.length <= 5) {
+                                var filtered = newValue.filter { it.isDigit() || it == ':' }
+                                if (filtered.length == 2 && !filtered.contains(":")) filtered += ":"
+                                if (filtered.length <= 5) endTime = filtered
+                            }
+                        },
+                        label = { Text("Hora fin (HH:MM)", color = Color.White.copy(alpha = 0.7f)) },
+                        isError = endTime.isNotBlank() && !isValidTime(endTime),
+                        supportingText = {
+                            if (endTime.isNotBlank() && !isValidTime(endTime))
+                                Text("Formato HH:MM (24h)", color = Color.Red, fontSize = 10.sp)
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                    )
+                }
+
+                Text("Días de la semana", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    firstRowDays.forEach { (key, displayName) ->
+                        FilterChip(
+                            selected = selectedDays.contains(key),
+                            onClick = {
+                                selectedDays = if (selectedDays.contains(key)) selectedDays - key else selectedDays + key
+                            },
+                            label = { Text(displayName, color = if (selectedDays.contains(key)) Color.White else Color.White.copy(alpha = 0.7f)) },
+                            colors = FilterChipDefaults.filterChipColors(/* igual */),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    secondRowDays.forEach { (key, displayName) ->
+                        FilterChip(
+                            selected = selectedDays.contains(key),
+                            onClick = {
+                                selectedDays = if (selectedDays.contains(key)) selectedDays - key else selectedDays + key
+                            },
+                            label = { Text(displayName, color = if (selectedDays.contains(key)) Color.White else Color.White.copy(alpha = 0.7f)) },
+                            colors = FilterChipDefaults.filterChipColors(/* igual */),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                Text("Actividad", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                Box {
+                    OutlinedTextField(
+                        value = existingActivities.find { it.id == selectedActivityId }?.name ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Selecciona una actividad", color = Color.White.copy(alpha = 0.7f)) },
+                        trailingIcon = {
+                            IconButton(onClick = { expanded = !expanded }) {
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Abrir", tint = Color.White)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                    )
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        existingActivities.forEach { activity ->
+                            DropdownMenuItem(
+                                text = { Text(activity.name, color = Color.White) },
+                                onClick = {
+                                    selectedActivityId = activity.id
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (name.isNotBlank() && selectedDays.isNotEmpty() && selectedActivityId != null && isValidTime(startTime) && isValidTime(endTime)) {
+                        val routineUpdate = RoutineUpdate(
+                            name = name,
+                            description = description.takeIf { it.isNotBlank() },
+                            startTime = startTime,
+                            endTime = endTime,
+                            days = selectedDays.toList(),
+                            activityId = selectedActivityId
+                        )
+                        onUpdate(routineUpdate)
+                    }
+                },
+                enabled = !isUpdating && name.isNotBlank() && selectedDays.isNotEmpty() && selectedActivityId != null && isValidTime(startTime) && isValidTime(endTime)
+            ) {
+                if (isUpdating) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White)
+                else Text("Guardar", color = Color.White)
             }
         },
         dismissButton = {
