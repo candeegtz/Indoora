@@ -54,3 +54,10 @@ data class ActivityRead(
     val name: String,
     val homeId: Int
 )
+
+data class ActivityWithPositionsResponse(
+    val id: Int,
+    val name: String,
+    val homeId: Int,
+    val positionIds: List<Int>
+)

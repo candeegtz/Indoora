@@ -2,6 +2,7 @@ package com.indoora.app.data.repository
 
 import com.indoora.app.data.model.ActivityCreate
 import com.indoora.app.data.model.ActivityRead
+import com.indoora.app.data.model.ActivityWithPositionsResponse
 import com.indoora.app.network.RetrofitClient
 
 class ActivityRepository {
@@ -65,6 +66,20 @@ class ActivityRepository {
             val response = api.deleteActivity(activityId)
             if (response.isSuccessful) Result.success(true)
             else Result.failure(Exception("Error ${response.code()}: ${response.message()}"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getActivityById(activityId: Int): Result<ActivityWithPositionsResponse> {
+        return try {
+            val response = api.getActivityById(activityId)
+            if (response.isSuccessful) {
+                response.body()?.let { Result.success(it) }
+                    ?: Result.failure(Exception("Empty response"))
+            } else {
+                Result.failure(Exception("Error ${response.code()}: ${response.message()}"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

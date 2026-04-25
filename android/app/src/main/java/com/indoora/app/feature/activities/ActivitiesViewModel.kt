@@ -4,6 +4,7 @@ package com.indoora.app.feature.activities
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.indoora.app.data.model.ActivityRead
+import com.indoora.app.data.model.ActivityWithPositionsResponse
 import com.indoora.app.data.model.PositionRead
 import com.indoora.app.data.model.RoomRead
 import com.indoora.app.data.repository.ActivityRepository
@@ -18,10 +19,9 @@ import kotlinx.coroutines.launch
 class ActivitiesViewModel(
     private val activityRepository: ActivityRepository,
     private val homeRepository: HomeRepository,
-    private val homeId: Int               // ← Recibimos homeId desde NavGraph
+    private val homeId: Int
 ) : ViewModel() {
 
-    // Estados para actividades
     private val _activitiesState = MutableStateFlow<UiState<List<ActivityRead>>>(UiState.Idle)
     val activitiesState: StateFlow<UiState<List<ActivityRead>>> = _activitiesState.asStateFlow()
 
@@ -34,7 +34,11 @@ class ActivitiesViewModel(
     private val _deleteState = MutableStateFlow<UiState<Boolean>>(UiState.Idle)
     val deleteState: StateFlow<UiState<Boolean>> = _deleteState.asStateFlow()
 
-    // Estados para habitaciones y posiciones (diálogos)
+    // ---------- Estado para la edición (con posiciones) ----------
+    private val _selectedActivityState = MutableStateFlow<UiState<ActivityWithPositionsResponse>>(UiState.Idle)
+    val selectedActivityState: StateFlow<UiState<ActivityWithPositionsResponse>> = _selectedActivityState.asStateFlow()
+
+    // ---------- Estados para habitaciones y posiciones (diálogos) ----------
     private val _roomsState = MutableStateFlow<UiState<List<RoomRead>>>(UiState.Idle)
     val roomsState: StateFlow<UiState<List<RoomRead>>> = _roomsState.asStateFlow()
 
@@ -42,11 +46,10 @@ class ActivitiesViewModel(
     val positionsState: StateFlow<Map<Int, UiState<List<PositionRead>>>> = _positionsState.asStateFlow()
 
     init {
-        // Cargar actividades al instante (como en ProfileViewModel)
         loadActivities()
     }
 
-    // ---------------- Operaciones con actividades ----------------
+    // ========== Operaciones con actividades ==========
 
     fun loadActivities() {
         viewModelScope.launch {
@@ -54,11 +57,11 @@ class ActivitiesViewModel(
             val result = activityRepository.getActivities(homeId)
             _activitiesState.value = result.fold(
                 onSuccess = { list ->
-                    println("✅ Actividades cargadas: ${list.size}") // Debug
+                    println("✅ Actividades cargadas: ${list.size}")
                     UiState.Success(list)
                 },
                 onFailure = { error ->
-                    println("❌ Error al cargar actividades: ${error.message}")
+                    println("❌ Error cargando actividades: ${error.message}")
                     UiState.Error(error.message ?: "Error loading activities")
                 }
             )
@@ -71,7 +74,6 @@ class ActivitiesViewModel(
             val result = activityRepository.createActivity(name, homeId, positionIds)
             _createState.value = result.fold(
                 onSuccess = { activity ->
-                    // Recargar la lista después de crear
                     loadActivities()
                     UiState.Success(activity)
                 },
@@ -108,11 +110,23 @@ class ActivitiesViewModel(
         }
     }
 
+    fun loadActivityForEditing(activityId: Int) {
+        viewModelScope.launch {
+            _selectedActivityState.value = UiState.Loading
+            val result = activityRepository.getActivityById(activityId)
+            _selectedActivityState.value = result.fold(
+                onSuccess = { activity -> UiState.Success(activity) },
+                onFailure = { error -> UiState.Error(error.message ?: "Error loading activity details") }
+            )
+        }
+    }
+
     fun resetCreateState() { _createState.value = UiState.Idle }
     fun resetUpdateState() { _updateState.value = UiState.Idle }
     fun resetDeleteState() { _deleteState.value = UiState.Idle }
+    fun resetSelectedActivityState() { _selectedActivityState.value = UiState.Idle }
 
-    // ---------------- Carga de habitaciones y posiciones ----------------
+    // ========== Carga de habitaciones y posiciones ==========
 
     fun loadRoomsAndPositions() {
         viewModelScope.launch {

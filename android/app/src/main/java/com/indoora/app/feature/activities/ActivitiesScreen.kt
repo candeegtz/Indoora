@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.indoora.app.data.model.ActivityRead
+import com.indoora.app.data.model.ActivityWithPositionsResponse
 import com.indoora.app.feature.auth.UiState
 import com.indoora.app.ui.theme.indooraBackground
 import kotlinx.coroutines.delay
@@ -32,18 +33,33 @@ fun ActivitiesScreen(
     viewModel: ActivitiesViewModel,
     onNavigateBack: () -> Unit
 ) {
-    // Observar estados
     val activitiesState by viewModel.activitiesState.collectAsStateWithLifecycle()
     val createState by viewModel.createState.collectAsStateWithLifecycle()
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     val deleteState by viewModel.deleteState.collectAsStateWithLifecycle()
+    val selectedActivityState by viewModel.selectedActivityState.collectAsStateWithLifecycle()
 
     var showCreateDialog by remember { mutableStateOf(false) }
-    var editingActivity by remember { mutableStateOf<ActivityRead?>(null) }
+    var editingActivityId by remember { mutableStateOf<Int?>(null) }
+    var showEditDialog by remember { mutableStateOf(false) }
     var deletingActivity by remember { mutableStateOf<ActivityRead?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    // Limpiar mensajes después de un tiempo
+    // ========== Manejo de edición ==========
+    LaunchedEffect(selectedActivityState) {
+        when (selectedActivityState) {
+            is UiState.Success -> showEditDialog = true
+            is UiState.Error -> {
+                // Si hay error, cerramos el diálogo y reseteamos
+                showEditDialog = false
+                editingActivityId = null
+                viewModel.resetSelectedActivityState()
+            }
+            else -> {}
+        }
+    }
+
+    // ========== Recarga al crear/actualizar/eliminar ==========
     LaunchedEffect(createState, updateState, deleteState) {
         when {
             createState is UiState.Success || createState is UiState.Error -> {
@@ -97,6 +113,7 @@ fun ActivitiesScreen(
                 .indooraBackground()
                 .padding(paddingValues)
         ) {
+            // Contenido principal
             when (val state = activitiesState) {
                 is UiState.Loading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -130,7 +147,10 @@ fun ActivitiesScreen(
                             items(activities, key = { it.id }) { activity ->
                                 ActivityCard(
                                     activity = activity,
-                                    onEditClick = { editingActivity = activity },
+                                    onEditClick = {
+                                        editingActivityId = activity.id
+                                        viewModel.loadActivityForEditing(activity.id)
+                                    },
                                     onDeleteClick = {
                                         deletingActivity = activity
                                         showDeleteConfirm = true
@@ -168,14 +188,14 @@ fun ActivitiesScreen(
                     }
                 }
                 else -> {
-                    // Idle - Mostrar loading (no debería ocurrir)
+                    // Idle – mostrar loading (por si acaso)
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.onBackground)
                     }
                 }
             }
 
-            // Diálogos
+            // Diálogo de creación
             if (showCreateDialog) {
                 CreateActivityDialog(
                     viewModel = viewModel,
@@ -183,14 +203,20 @@ fun ActivitiesScreen(
                 )
             }
 
-            editingActivity?.let { activity ->
+            // Diálogo de edición (se muestra cuando selectedActivityState es Success y showEditDialog true)
+            if (showEditDialog && selectedActivityState is UiState.Success) {
                 EditActivityDialog(
                     viewModel = viewModel,
-                    activity = activity,
-                    onDismiss = { editingActivity = null }
+                    activity = (selectedActivityState as UiState.Success).data,
+                    onDismiss = {
+                        showEditDialog = false
+                        editingActivityId = null
+                        viewModel.resetSelectedActivityState()
+                    }
                 )
             }
 
+            // Confirmación de eliminación
             if (showDeleteConfirm && deletingActivity != null) {
                 AlertDialog(
                     onDismissRequest = {
@@ -220,10 +246,7 @@ fun ActivitiesScreen(
                                 deletingActivity = null
                             }
                         ) {
-                            Text(
-                                "Eliminar",
-                                color = MaterialTheme.colorScheme.error
-                            )
+                            Text("Eliminar", color = MaterialTheme.colorScheme.error)
                         }
                     },
                     dismissButton = {
@@ -233,10 +256,7 @@ fun ActivitiesScreen(
                                 deletingActivity = null
                             }
                         ) {
-                            Text(
-                                "Cancelar",
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                            )
+                            Text("Cancelar", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
                         }
                     },
                     containerColor = Color(0xFF4A4458),
@@ -245,7 +265,7 @@ fun ActivitiesScreen(
             }
 
             // Mensajes de feedback
-            val message = when {
+            val feedback = when {
                 createState is UiState.Success -> "Actividad creada correctamente"
                 createState is UiState.Error -> (createState as UiState.Error).message
                 updateState is UiState.Success -> "Actividad actualizada correctamente"
@@ -254,8 +274,7 @@ fun ActivitiesScreen(
                 deleteState is UiState.Error -> (deleteState as UiState.Error).message
                 else -> null
             }
-
-            message?.let {
+            feedback?.let {
                 val isError = createState is UiState.Error ||
                         updateState is UiState.Error ||
                         deleteState is UiState.Error
@@ -279,7 +298,8 @@ fun ActivitiesScreen(
     }
 }
 
-// -------------------- Componentes auxiliares (sin cambios relevantes) --------------------
+// -------------------- Componentes auxiliares --------------------
+
 @Composable
 fun ActivityCard(
     activity: ActivityRead,
@@ -289,19 +309,23 @@ fun ActivityCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.2f))
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.2f)
+        )
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                activity.name,
-                Modifier.weight(1f),
+                text = activity.name,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
-                color = Color.White
+                color = Color.White,
+                modifier = Modifier.weight(1f)
             )
             Row {
                 IconButton(onClick = onEditClick) {
@@ -344,7 +368,9 @@ fun CreateActivityDialog(
         title = { Text("Nueva actividad", fontWeight = FontWeight.Bold, color = Color.White) },
         text = {
             Column(
-                Modifier.fillMaxWidth().heightIn(max = 500.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 500.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedTextField(
@@ -362,58 +388,85 @@ fun CreateActivityDialog(
                     ),
                     textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                 )
-                Text("Posiciones donde ocurre:", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.White)
+
+                Text(
+                    text = "Posiciones donde ocurre:",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
 
                 when (roomsState) {
-                    is UiState.Loading -> Box(Modifier.fillMaxWidth(), Alignment.Center) {
-                        CircularProgressIndicator(color = Color.White)
+                    is UiState.Loading -> {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = Color.White)
+                        }
                     }
                     is UiState.Success -> {
                         val rooms = (roomsState as UiState.Success).data
                         if (rooms.isEmpty()) {
                             Text("No hay habitaciones en esta casa", color = Color.White.copy(alpha = 0.6f))
                         } else {
-                            LazyColumn(Modifier.heightIn(max = 300.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            LazyColumn(
+                                modifier = Modifier.heightIn(max = 300.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 items(rooms) { room ->
                                     val isExpanded = expandedRoomId == room.id
-                                    val positionsUi = positionsState[room.id]
+                                    val positionsUi = positionsState[room.id] ?: UiState.Idle
                                     Column {
                                         Row(
-                                            Modifier.fillMaxWidth()
-                                                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                    Color.White.copy(alpha = 0.2f),
+                                                    RoundedCornerShape(12.dp)
+                                                )
                                                 .clickable { expandedRoomId = if (isExpanded) null else room.id }
                                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(room.name, fontWeight = FontWeight.Medium, color = Color.White)
+                                            Text(
+                                                room.name,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.White
+                                            )
                                             Icon(
                                                 if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                                null,
+                                                contentDescription = if (isExpanded) "Colapsar" else "Expandir",
                                                 tint = Color.White
                                             )
                                         }
+
                                         AnimatedVisibility(
                                             visible = isExpanded,
-                                            enter = expandVertically(tween(200)) + fadeIn(),
-                                            exit = shrinkVertically(tween(200)) + fadeOut()
+                                            enter = expandVertically(animationSpec = tween(200)) + fadeIn(),
+                                            exit = shrinkVertically(animationSpec = tween(200)) + fadeOut()
                                         ) {
-                                            Column(Modifier.padding(start = 16.dp, top = 8.dp)) {
+                                            Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp)) {
                                                 when (positionsUi) {
                                                     is UiState.Success -> {
                                                         val positions = positionsUi.data
                                                         if (positions.isEmpty()) {
-                                                            Text("No hay posiciones en esta habitación", fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
+                                                            Text(
+                                                                "No hay posiciones en esta habitación",
+                                                                fontSize = 12.sp,
+                                                                color = Color.White.copy(alpha = 0.6f)
+                                                            )
                                                         } else {
                                                             positions.forEach { pos ->
                                                                 Row(
-                                                                    Modifier.padding(vertical = 4.dp),
+                                                                    modifier = Modifier.padding(vertical = 4.dp),
                                                                     verticalAlignment = Alignment.CenterVertically
                                                                 ) {
                                                                     Checkbox(
                                                                         checked = selectedPositionIds.contains(pos.id),
                                                                         onCheckedChange = { isChecked ->
-                                                                            selectedPositionIds = if (isChecked) selectedPositionIds + pos.id else selectedPositionIds - pos.id
+                                                                            selectedPositionIds = if (isChecked)
+                                                                                selectedPositionIds + pos.id
+                                                                            else
+                                                                                selectedPositionIds - pos.id
                                                                         },
                                                                         colors = CheckboxDefaults.colors(
                                                                             checkedColor = Color.White,
@@ -435,7 +488,12 @@ fun CreateActivityDialog(
                             }
                         }
                     }
-                    is UiState.Error -> Text("Error: ${(roomsState as UiState.Error).message}", color = MaterialTheme.colorScheme.error)
+                    is UiState.Error -> {
+                        Text(
+                            "Error: ${(roomsState as UiState.Error).message}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                     else -> {}
                 }
             }
@@ -449,11 +507,18 @@ fun CreateActivityDialog(
                 },
                 enabled = activityName.isNotBlank() && selectedPositionIds.isNotEmpty() && createState !is UiState.Loading
             ) {
-                if (createState is UiState.Loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White)
-                else Text("Crear", color = Color.White)
+                if (createState is UiState.Loading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                } else {
+                    Text("Crear", color = Color.White)
+                }
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.White.copy(alpha = 0.7f)) } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = Color.White.copy(alpha = 0.7f))
+            }
+        },
         containerColor = Color(0xFF4A4458),
         shape = RoundedCornerShape(16.dp)
     )
@@ -462,14 +527,14 @@ fun CreateActivityDialog(
 @Composable
 fun EditActivityDialog(
     viewModel: ActivitiesViewModel,
-    activity: ActivityRead,
+    activity: ActivityWithPositionsResponse,
     onDismiss: () -> Unit
 ) {
     var activityName by remember { mutableStateOf(activity.name) }
     val roomsState by viewModel.roomsState.collectAsStateWithLifecycle()
     val positionsState by viewModel.positionsState.collectAsStateWithLifecycle()
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
-    var selectedPositionIds by remember { mutableStateOf(emptySet<Int>()) }
+    var selectedPositionIds by remember { mutableStateOf(activity.positionIds.toSet()) }
     var expandedRoomId by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
@@ -519,7 +584,7 @@ fun EditActivityDialog(
                             LazyColumn(Modifier.heightIn(max = 300.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items(rooms) { room ->
                                     val isExpanded = expandedRoomId == room.id
-                                    val positionsUi = positionsState[room.id]
+                                    val positionsUi = positionsState[room.id] ?: UiState.Idle
                                     Column {
                                         Row(
                                             Modifier.fillMaxWidth()

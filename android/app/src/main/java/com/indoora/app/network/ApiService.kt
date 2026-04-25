@@ -2,6 +2,7 @@ package com.indoora.app.network
 
 import com.indoora.app.data.model.ActivityCreate
 import com.indoora.app.data.model.ActivityRead
+import com.indoora.app.data.model.ActivityWithPositionsResponse
 import com.indoora.app.data.model.EmisorDeviceCreate
 import com.indoora.app.data.model.EmisorDeviceRead
 import com.indoora.app.data.model.HomeRead
@@ -114,4 +115,8 @@ interface ApiService {
     // Eliminar actividad (si quieres)
     @DELETE("activities/{activity_id}")
     suspend fun deleteActivity(@Path("activity_id") activityId: Int): Response<Unit>
+
+    @GET("activities/{activity_id}")
+    suspend fun getActivityById(@Path("activity_id") activityId: Int): Response<ActivityWithPositionsResponse>
+
 }
