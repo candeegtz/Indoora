@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.indoora.app.data.repository.ActivityRepository
 import com.indoora.app.data.repository.AuthRepository
 import com.indoora.app.data.repository.HomeRepository
+import com.indoora.app.data.repository.RoutineRepository
 import com.indoora.app.feature.activities.ActivitiesScreen
 import com.indoora.app.feature.activities.ActivitiesViewModel
 import com.indoora.app.feature.auth.AuthViewModel
@@ -23,6 +24,8 @@ import com.indoora.app.feature.home.HomeViewModelFactory
 import com.indoora.app.feature.profile.ProfileScreen
 import com.indoora.app.feature.profile.ProfileViewModel
 import com.indoora.app.feature.profile.ProfileViewModelFactory
+import com.indoora.app.feature.routines.RoutinesScreen
+import com.indoora.app.feature.routines.RoutinesViewModel
 import com.indoora.app.feature.splash.SplashScreen
 
 sealed class Screen(val route: String) {
@@ -39,7 +42,9 @@ sealed class Screen(val route: String) {
         fun createRoute(homeId: Int) = "system_training/$homeId"
     }
     object Profile         : Screen("profile")
-    object Routines        : Screen("routines")
+    object Routines : Screen("routines/{homeId}") {
+        fun createRoute(homeId: Int) = "routines/$homeId"
+    }
 
     object Activities : Screen("activities/{homeId}") {
         fun createRoute(homeId: Int) = "activities/$homeId"
@@ -139,7 +144,7 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                     navController.navigate(Screen.Profile.route)
                 },
                 onNavigateToRoutines = {
-                    navController.navigate(Screen.Routines.route)
+                    navController.navigate(Screen.Routines.createRoute(homeId))
                 },
                 onNavigateToActivities = { navController.navigate(Screen.Activities.createRoute(homeId)) }
             )
@@ -180,8 +185,15 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
             )
         }
 
-        composable(Screen.Routines.route) {
-            // TODO: RoutinesScreen()
+        composable(Screen.Routines.route) { backStackEntry ->
+            val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
+            val routineRepository = RoutineRepository()
+            val viewModel = RoutinesViewModel(routineRepository, homeId)
+            RoutinesScreen(
+                viewModel = viewModel,
+                homeId = homeId,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

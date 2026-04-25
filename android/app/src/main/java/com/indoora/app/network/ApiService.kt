@@ -14,7 +14,9 @@ import com.indoora.app.data.model.ReceptorDeviceCreate
 import com.indoora.app.data.model.ReceptorDeviceRead
 import com.indoora.app.data.model.RoomCreate
 import com.indoora.app.data.model.RoomRead
+import com.indoora.app.data.model.RoutineCreate
 import com.indoora.app.data.model.RoutineRead
+import com.indoora.app.data.model.RoutineUpdate
 import com.indoora.app.data.model.UserCreate
 import com.indoora.app.data.model.UserRead
 import com.indoora.app.data.model.UserUpdate
@@ -95,8 +97,17 @@ interface ApiService {
     suspend fun getAllReceptorDevices(): Response<List<ReceptorDeviceRead>>
 
     // Routines
-    @GET("routines/")
-    suspend fun getAllRoutines(): Response<List<RoutineRead>>
+    @GET("routines/home/{home_id}")
+    suspend fun getRoutinesByHomeId(@Path("home_id") homeId: Int): Response<List<RoutineRead>>
+
+    @POST("routines")
+    suspend fun createRoutine(@Body routine: RoutineCreate): Response<RoutineRead>
+
+    @PUT("routines/{routine_id}")
+    suspend fun updateRoutine(@Path("routine_id") routineId: Int, @Body routine: RoutineUpdate): Response<RoutineRead>
+
+    @DELETE("routines/{routine_id}")
+    suspend fun deleteRoutine(@Path("routine_id") routineId: Int): Response<Unit>
 
     @GET("homes/{home_id}/rooms")
     suspend fun getRoomsByHomeId(@Path("home_id") homeId: Int): Response<List<RoomRead>>
