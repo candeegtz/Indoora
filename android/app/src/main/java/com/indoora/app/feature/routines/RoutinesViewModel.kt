@@ -10,6 +10,9 @@ import com.indoora.app.feature.auth.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 
 class RoutinesViewModel(
@@ -28,6 +31,35 @@ class RoutinesViewModel(
 
     private val _deleteState = MutableStateFlow<UiState<Boolean>>(UiState.Idle)
     val deleteState: StateFlow<UiState<Boolean>> = _deleteState.asStateFlow()
+
+    // Estado del filtro por día (null = "Todos")
+    private val _selectedDay = MutableStateFlow<String?>(null)
+    val selectedDay: StateFlow<String?> = _selectedDay.asStateFlow()
+
+    // Lista filtrada y ordenada (derivada de routinesState y selectedDay)
+    val filteredRoutines: StateFlow<List<RoutineRead>> = combine(
+        routinesState,
+        _selectedDay
+    ) { state, day ->
+        when (state) {
+            is UiState.Success -> {
+                val all = state.data
+                // Filtrar por día
+                val filtered = if (day == null) {
+                    all
+                } else {
+                    all.filter { routine -> routine.days.contains(day) }
+                }
+                // Ordenar por startTime (formato "HH:MM:SS" o "HH:MM")
+                filtered.sortedBy { it.startTime.take(5) }
+            }
+            else -> emptyList()
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     init {
         loadRoutines()
@@ -84,6 +116,10 @@ class RoutinesViewModel(
                 onFailure = { UiState.Error(it.message ?: "Error deleting routine") }
             )
         }
+    }
+
+    fun setSelectedDay(day: String?) {
+        _selectedDay.value = day
     }
 
     fun resetCreateState() { _createState.value = UiState.Idle }

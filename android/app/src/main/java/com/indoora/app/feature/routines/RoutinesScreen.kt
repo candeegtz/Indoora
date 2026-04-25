@@ -1,11 +1,13 @@
 package com.indoora.app.feature.routines
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -42,6 +44,10 @@ fun RoutinesScreen(
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     val deleteState by viewModel.deleteState.collectAsStateWithLifecycle()
 
+    // Estado del filtro y lista filtrada/ordenada
+    val selectedDay by viewModel.selectedDay.collectAsStateWithLifecycle()
+    val filteredRoutines by viewModel.filteredRoutines.collectAsStateWithLifecycle()
+
     var showCreateDialog by remember { mutableStateOf(false) }
     var routineToEdit by remember { mutableStateOf<RoutineRead?>(null) }
     var routineToDelete by remember { mutableStateOf<RoutineRead?>(null) }
@@ -70,7 +76,6 @@ fun RoutinesScreen(
     LaunchedEffect(createState) {
         if (createState is UiState.Success) {
             showCreateDialog = false
-            // Opcional: resetear el estado después de un tiempo (ya lo hace el reset en el ViewModel)
         }
     }
 
@@ -81,7 +86,7 @@ fun RoutinesScreen(
         }
     }
 
-    // Limpiar mensajes después de 3 segundos (ya está)
+    // Limpiar mensajes después de 3 segundos
     LaunchedEffect(createState, updateState, deleteState) {
         if (createState is UiState.Success || createState is UiState.Error) delay(3000)
         if (updateState is UiState.Success || updateState is UiState.Error) delay(3000)
@@ -90,6 +95,18 @@ fun RoutinesScreen(
         viewModel.resetUpdateState()
         viewModel.resetDeleteState()
     }
+
+    // Días para el filtro (null = Todos)
+    val daysFilter = listOf(
+        null to "Todos",
+        "MONDAY" to "Lunes",
+        "TUESDAY" to "Martes",
+        "WEDNESDAY" to "Miércoles",
+        "THURSDAY" to "Jueves",
+        "FRIDAY" to "Viernes",
+        "SATURDAY" to "Sábado",
+        "SUNDAY" to "Domingo"
+    )
 
     Scaffold(
         topBar = {
@@ -127,31 +144,59 @@ fun RoutinesScreen(
                     }
                 }
                 is UiState.Success -> {
-                    val routines = (routinesState as UiState.Success).data
-                    if (routines.isEmpty()) {
-                        Box(Modifier.fillMaxSize(), Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("No hay rutinas creadas", color = Color.White.copy(alpha = 0.7f), fontSize = 16.sp)
-                                Spacer(Modifier.height(8.dp))
-                                Text("Toca + para crear una", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp)
+                    Column {
+                        // Fila de filtros (chips horizontales)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(vertical = 8.dp, horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            daysFilter.forEach { (dayCode, dayName) ->
+                                FilterChip(
+                                    selected = selectedDay == dayCode,
+                                    onClick = { viewModel.setSelectedDay(dayCode) },
+                                    label = { Text(dayName, color = if (selectedDay == dayCode) Color.White else Color.White.copy(alpha = 0.7f)) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Color.White.copy(alpha = 0.3f),
+                                        disabledSelectedContainerColor = Color.White.copy(alpha = 0.1f),
+                                        containerColor = Color.White.copy(alpha = 0.1f)
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 2.dp)
+                                )
                             }
                         }
-                    } else {
-                        LazyColumn(
-                            Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(routines, key = { it.id }) { routine ->
-                                RoutineCard(
-                                    routine = routine,
-                                    activityName = activityNameMap[routine.activityId] ?: "Actividad ${routine.activityId}",
-                                    onEditClick = { routineToEdit = routine },
-                                    onDeleteClick = {
-                                        routineToDelete = routine
-                                        showDeleteConfirm = true
-                                    }
+
+                        if (filteredRoutines.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    if (selectedDay == null) "No hay rutinas creadas"
+                                    else "No hay rutinas para este día",
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontSize = 16.sp
                                 )
+                            }
+                        } else {
+                            LazyColumn(
+                                Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(filteredRoutines, key = { it.id }) { routine ->
+                                    RoutineCard(
+                                        routine = routine,
+                                        activityName = activityNameMap[routine.activityId] ?: "Actividad ${routine.activityId}",
+                                        onEditClick = { routineToEdit = routine },
+                                        onDeleteClick = {
+                                            routineToDelete = routine
+                                            showDeleteConfirm = true
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -175,6 +220,7 @@ fun RoutinesScreen(
                 else -> {}
             }
 
+            // Diálogo de creación
             if (showCreateDialog) {
                 CreateRoutineDialog(
                     homeId = homeId,
@@ -187,6 +233,7 @@ fun RoutinesScreen(
                 )
             }
 
+            // Diálogo de edición
             if (routineToEdit != null) {
                 EditRoutineDialog(
                     routine = routineToEdit!!,
@@ -199,6 +246,7 @@ fun RoutinesScreen(
                 )
             }
 
+            // Confirmación de eliminación
             if (showDeleteConfirm && routineToDelete != null) {
                 AlertDialog(
                     onDismissRequest = {
