@@ -10,6 +10,8 @@ Indoora es una aplicación Android que permite gestionar entornos indoor (hogare
 - [Instalación del backend](#instalación-del-backend)
 - [Configuración de Android](#configuración-de-android)
 - [Ejecución y pruebas](#ejecución-y-pruebas)
+- [Detener el servidor](#detener-el-servidor)
+- [Ejecución de tests](#ejecución-de-tests)
 - [Solución de problemas](#solución-de-problemas)
 
 ---
@@ -299,7 +301,7 @@ El sistema incluye usuarios predefinidos para pruebas:
 4. El sistema te vinculará al hogar existente
 
 ---
-##  Detener el servidor
+## Detener el servidor
 
 Pulsa `Ctrl + C` en la terminal donde se está ejecutando el backend.
 ---
