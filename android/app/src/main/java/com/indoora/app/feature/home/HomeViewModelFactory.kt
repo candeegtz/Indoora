@@ -1,5 +1,6 @@
 package com.indoora.app.feature.home
 
+import HomeViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.indoora.app.data.repository.HomeRepository

@@ -1,5 +1,4 @@
-package com.indoora.app.feature.home
-
+// HomeViewModel.kt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.indoora.app.data.model.HomeRead
@@ -10,20 +9,28 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val repository: HomeRepository
+    private val homeRepository: HomeRepository
 ) : ViewModel() {
 
-    private val _homeState = MutableStateFlow<UiState<HomeRead>>(UiState.Idle)
+    private val _homeState = MutableStateFlow<UiState<HomeRead>>(UiState.Loading)
     val homeState: StateFlow<UiState<HomeRead>> = _homeState
+
+    private val _refreshTrigger = MutableStateFlow(0)
+    val refreshTrigger: StateFlow<Int> = _refreshTrigger
 
     fun loadHome(homeId: Int) {
         viewModelScope.launch {
             _homeState.value = UiState.Loading
-            val result = repository.getHome(homeId)
-            _homeState.value = result.fold(
-                onSuccess = { UiState.Success(it) },
-                onFailure = { UiState.Error(it.message ?: "Error loading home") }
-            )
+            val result = homeRepository.getHome(homeId)
+            _homeState.value = if (result.isSuccess) {
+                UiState.Success(result.getOrNull()!!)
+            } else {
+                UiState.Error(result.exceptionOrNull()?.message ?: "Error desconocido")
+            }
         }
+    }
+
+    fun refreshHome() {
+        _refreshTrigger.value += 1
     }
 }

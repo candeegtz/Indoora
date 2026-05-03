@@ -1,5 +1,6 @@
 package com.indoora.app.feature.home
 
+import HomeViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,8 +32,9 @@ fun HomeScreen(
     onNavigateToRoutines: () -> Unit = {}
 ) {
     val homeState by viewModel.homeState.collectAsState()
+    val refreshTrigger by viewModel.refreshTrigger.collectAsState()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshTrigger) {
         viewModel.loadHome(homeId)
     }
 
