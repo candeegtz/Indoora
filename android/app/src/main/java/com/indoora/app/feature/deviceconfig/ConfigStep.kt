@@ -5,7 +5,7 @@ data class ConfigStep(
     val title: String,
     val description: String,
     val details: List<String> = emptyList(),
-    val imageRes: Int? = null  // Opcional: para añadir imágenes más adelante
+    val imageRes: Int? = null  // Por si se quiere añadir alguna imagen descriptiva
 )
 
 object DeviceConfigSteps {
