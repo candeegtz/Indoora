@@ -5,6 +5,7 @@ import com.indoora.app.data.model.ActivityRead
 import com.indoora.app.data.model.EmisorDeviceCreate
 import com.indoora.app.data.model.EmisorDeviceRead
 import com.indoora.app.data.model.HomeRead
+import com.indoora.app.data.model.HomeUpdate
 import com.indoora.app.data.model.LoginRequest
 import com.indoora.app.data.model.LoginResponse
 import com.indoora.app.data.model.PositionCreate
@@ -20,7 +21,9 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 interface ApiService {
 
@@ -55,6 +58,12 @@ interface ApiService {
     @DELETE("homes/rooms/{id}")
     suspend fun deleteRoom(@Path("id") id: Int): Response<Map<String, String>>
 
+    @GET("homes/{home_id}/rooms")
+    suspend fun getRoomsByHomeId(@Path("home_id") homeId: Int): Response<List<RoomRead>>
+
+    @GET("homes/rooms/{room_id}/positions")
+    suspend fun getPositionsByRoomId(@Path("room_id") roomId: Int): Response<List<PositionRead>>
+
     // Positions
     @POST("homes/positions")
     suspend fun createPosition(@Body request: PositionCreate): Response<PositionRead>
@@ -88,4 +97,7 @@ interface ApiService {
     // Routines
     @GET("routines/")
     suspend fun getAllRoutines(): Response<List<RoutineRead>>
+
+    @PUT("homes/{homeId}")
+    suspend fun updateHome(@Path("homeId") homeId: Int,  @Body homeUpdate: HomeUpdate): Response<HomeRead>
 }
