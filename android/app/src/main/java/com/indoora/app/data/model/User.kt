@@ -20,3 +20,11 @@ data class UserRead(
     val userType: String,
     val homeId: Int?
 )
+
+data class UserUpdate(
+    val username: String? = null,
+    val name: String? = null,
+    val surnames: String? = null,
+    val email: String? = null,
+    val password: String? = null
+)

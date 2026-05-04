@@ -26,7 +26,6 @@ class HomeRepository {
         }
     }
 
-
     suspend fun updateHomeConfigState(homeId: Int, estadoConfig: EstadoConfig): Result<HomeRead> {
         return try {
             val update = HomeUpdate(estadoConfig = estadoConfig)

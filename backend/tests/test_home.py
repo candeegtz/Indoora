@@ -185,7 +185,7 @@ def test_home_estado_config_default_on_register(client):
 
     me = client.get("/auth/me", headers=auth_header).json()
     
-    home_response = client.get(f"/homes/{me['home_id']}", headers=auth_header)
+    home_response = client.get(f"/homes/{me['homeId']}", headers=auth_header)
     assert home_response.json()["estadoConfig"] == EstadoConfig.NOT_CONFIG
 
 
