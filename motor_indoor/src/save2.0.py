@@ -1,214 +1,224 @@
 import os
+import sys
 import json
 import threading
+import time
+from datetime import datetime
 import pandas as pd
 import paho.mqtt.client as mqtt
 
-# --- 0. RUTAS ABSOLUTAS ---
-BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
+# ------------ CONFIGURACIÓN ------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(BASE_DIR, 'config.json')
-LOGS_DIR    = os.path.join(BASE_DIR, 'logs')
-CSV_FILE    = os.path.join(LOGS_DIR, 'datosparaEntrenar.csv')
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+CSV_FILE = os.path.join(LOGS_DIR, 'datosparaEntrenar.csv')
+os.makedirs(LOGS_DIR, exist_ok=True)
 
-# --- 1. CARGAR (O CREAR) CONFIGURACIÓN POR DEFECTO ---
-default_cfg = {"total_readings_per_position": 300}
-if not os.path.exists(CONFIG_FILE):
-    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-        json.dump(default_cfg, f, indent=2, ensure_ascii=False)
-    print(f"Se creó {CONFIG_FILE} con {default_cfg}")
-
-with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+# Cargar configuración
+with open(CONFIG_FILE, 'r') as f:
     cfg = json.load(f)
 
-# --- 2. DECIDIR MODO DE FUNCIONAMIENTO ---
-default_n = cfg.get("total_readings_per_position", 300)
-resp = input(f"¿Usar configuración por defecto? ({default_n} lecturas/posición) [S/n]: ").strip().lower()
-if resp in ('', 's', 'si', 'y', 'yes'):
-    default_mode    = True
-    total_readings  = default_n
-else:
-    default_mode    = False
-    total_readings  = 0
-    while total_readings < 1:
-        try:
-            total_readings = int(input("¿Cuántas lecturas por posición vas a recoger? "))
-        except ValueError:
-            print("Número entero, por favor.")
+MQTT_BROKER = cfg.get("mqtt_broker", "localhost")
+MQTT_PORT = cfg.get("mqtt_port", 1883)
+MQTT_USER = cfg.get("mqtt_user", "")
+MQTT_PASSWORD = cfg.get("mqtt_password", "")
+TOPIC_PREFIX = cfg.get("training_topic_prefix", "training")
+TOTAL_READINGS = cfg.get("total_readings_per_position", 10)
 
-# --- 3. DEFINIR HABITACIONES Y POSICIONES ---
-ROOM_OPTIONS = {
-    1: 'Dormitorio',
-    2: 'Cocina',
-    3: 'Baño',
-    4: 'Salón'
-}
-POSITION_OPTIONS = {
-    'Dormitorio': ['Cama', 'Escritorio'],
-    'Cocina':     ['Fregadero','Vitroceramica','Frigorifico'],
-    'Baño':       ['Lavabo','WC'],
-    'Salón':      ['Sofá','Mesa de juegos']
-}
-
-# --- 4. SECUENCIA AUTOMÁTICA (solo en default_mode) ---
-if default_mode:
-    sequence = []
-    for _, room in ROOM_OPTIONS.items():
-        for pos in POSITION_OPTIONS[room]:
-            sequence.append((room, pos))
-    seq_index = 0
-    max_seq   = len(sequence)
-
-# Variables globales de ubicación y conteo
-current_room     = None
+# Variables globales
+sequence = []
+seq_index = -1
+current_room = None
 current_position = None
-rows_written     = 0
+rows_written = 0
+training_active = False
+waiting_confirmation = False
 
-def print_instruction():
-    """Muestra la instrucción al usuario para la posición actual."""
-    print("\n────────────────────────────────────")
-    if default_mode:
-        print(f"Posición {seq_index+1}/{max_seq}: {current_room} → {current_position}")
-    else:
-        print(f"Grabando para {current_room} → {current_position}")
-    print(f"Mantente en '{current_position}' y mueve el reloj mientras recolectamos datos")
-    print(f"({rows_written}/{total_readings})")
-    print("────────────────────────────────────\n")
-
-def ask_location_manual():
-    """Modo manual: menus numerados para habitación y posición."""
-    global current_room, current_position, rows_written
-    print("\nSelecciona HABITACIÓN:")
-    for k,v in ROOM_OPTIONS.items(): print(f"  {k}) {v}")
-    c = 0
-    while c not in ROOM_OPTIONS:
-        try: c = int(input("Número de habitación: "))
-        except: pass
-    current_room = ROOM_OPTIONS[c]
-
-    opts = POSITION_OPTIONS[current_room]
-    print(f"\nSelecciona POSICIÓN en {current_room}:")
-    for i,v in enumerate(opts,1): print(f"  {i}) {v}")
-    c2 = 0
-    while not (1<=c2<=len(opts)):
-        try: c2 = int(input("Número de posición: "))
-        except: pass
-    current_position = opts[c2-1]
-
-    rows_written = 0
-    print_instruction()
-
-def setup_next_default():
-    """Avanza en la secuencia automática y pide confirmación."""
-    global seq_index, current_room, current_position, rows_written
-    seq_index += 1
-    if seq_index >= max_seq:
-        print("\n¡Secuencia completa! Todos los puntos han sido muestreados.")
-        os._exit(0)
-    # Esperamos a que el usuario se mueva a la siguiente posición
-    input(f"\n--- {total_readings}/{total_readings} alcanzado. "
-          f"Múevete a '{sequence[seq_index][1]}' en '{sequence[seq_index][0]}', y pulsa ENTER cuando estés listo.")
-    current_room, current_position = sequence[seq_index]
-    rows_written = 0
-    print_instruction()
-
-# --- 5. CALLBACKS y CSV ---
-# Aseguramos carpeta y MQTT IDs
-os.makedirs(LOGS_DIR, exist_ok=True)
-esp32_ids = {f"receivers/{i}":f"ESP32_{i}" for i in range(1,11)}
+# IDs de ESP32 (hasta 10)       *Modificar si se necesitan más o menos*
+esp32_ids = {f"receivers/{i}": f"ESP32_{i}" for i in range(1, 11)}
 all_esp32_ids = list(esp32_ids.values())
 
-current_row    = None
-row_lock       = threading.RLock()
+# Variables para RSSI
+current_row = None
+row_lock = threading.RLock()
 timeout_thread = None
-TIMEOUT_SECONDS=3.5
+TIMEOUT_SECONDS = 3.5
 
+# Cliente MQTT
+client = mqtt.Client()
+if MQTT_USER:
+    client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+
+# ------------ FUNCIONES MQTT ------------
+def publish_instruction(instruction_type, **kwargs):
+    msg = {"type": instruction_type, "timestamp": time.time()}
+    msg.update(kwargs)
+    client.publish(f"{TOPIC_PREFIX}/instruction", json.dumps(msg))
+
+def publish_progress(current, total):
+    msg = {"type": "progress", "current": current, "total": total}
+    client.publish(f"{TOPIC_PREFIX}/progress", json.dumps(msg))
+
+def publish_complete():
+    client.publish(f"{TOPIC_PREFIX}/complete", json.dumps({"type": "complete"}))
+
+def stop_and_exit():
+    print("Deteniendo MQTT y saliendo...")
+    client.loop_stop()
+    client.disconnect()
+    os._exit(0)
+
+# ------------ LÓGICA DE ENTRENAMIENTO ------------
+def start_training_from_message(payload):
+    global sequence, seq_index, training_active, waiting_confirmation
+    try:
+        data = json.loads(payload)
+        seq_list = data.get("sequence", [])
+        # Extraer secuencia de habitaciones y posiciones
+        sequence = [(item["room"], item["position"]) for item in seq_list]
+        if not sequence:
+            print("Secuencia vacía. Ignorando inicio.")
+            return
+        seq_index = -1
+        training_active = True
+        waiting_confirmation = False
+        print(f"Entrenamiento iniciado con {len(sequence)} posiciones, {TOTAL_READINGS} lecturas/posición")
+        next_position()
+    except Exception as e:
+        print(f"Error al procesar mensaje start: {e}")
+
+def next_position():
+    global seq_index, current_room, current_position, rows_written, waiting_confirmation, training_active
+    seq_index += 1
+    # Si se ha completado la secuencia, finalizar entrenamiento
+    if seq_index >= len(sequence):
+        print("Entrenamiento completado. Saliendo...")
+        training_active = False
+        publish_complete()
+        time.sleep(0.5)
+        stop_and_exit()
+    # Configurar la siguiente posición
+    current_room, current_position = sequence[seq_index]
+    rows_written = 0
+    waiting_confirmation = True
+    publish_instruction("move_to", room=current_room, position=current_position, readings_needed=TOTAL_READINGS)
+    print(f"Esperando confirmación para: {current_room} → {current_position}")
+
+def on_confirm():
+    global waiting_confirmation
+    # Solo aceptar confirmación si se esta esperando y el entrenamiento está activo
+    if waiting_confirmation and training_active:
+        waiting_confirmation = False
+        print(f"Confirmado. Grabando {current_room} - {current_position} durante {TOTAL_READINGS} lecturas")
+
+# ------------ MANEJO DE DATOS RSSI ------------
+def write_row_to_csv():
+    global current_row, timeout_thread, rows_written
+    with row_lock:
+        if current_row is None:
+            return
+        # Completar valores nulos con -150
+        for e in all_esp32_ids:
+            if current_row.get(e) is None:
+                current_row[e] = -150
+
+        # Crear DataFrame y guardar en CSV
+        df = pd.DataFrame([current_row]).set_index('time')
+        cols = all_esp32_ids + ['Habitacion', 'Posicion']
+        df = df[cols]
+
+        # Escribir con encabezado solo si el archivo no existe o está vacío
+        header = not os.path.exists(CSV_FILE) or os.path.getsize(CSV_FILE) == 0
+        df.to_csv(CSV_FILE, mode='a', header=header,
+                  date_format='%d/%m/%Y %H:%M:%S', index_label='time')
+
+        # Incrementar contador de filas escritas y mostrar progreso
+        rows_written += 1
+        print(f"[{rows_written}/{TOTAL_READINGS}] {current_room}/{current_position}")
+
+        # Publicar progreso después de cada escritura
+        publish_progress(rows_written, TOTAL_READINGS)
+
+        # Limpiar fila actual
+        current_row = None
+        if timeout_thread:
+            timeout_thread.cancel()
+            timeout_thread = None
+
+        # Si se han escrito todas las lecturas necesarias para esta posición, pasar a la siguiente
+        if rows_written >= TOTAL_READINGS:
+            next_position()
+
+# ------------ CALLBACKS MQTT ------------
 def on_connect(client, userdata, flags, rc):
-    if rc==0:
+    # Suscribirse a los temas necesarios al conectar
+    if rc == 0:
         print("Conectado al broker MQTT")
+        client.subscribe(f"{TOPIC_PREFIX}/start")
+        client.subscribe(f"{TOPIC_PREFIX}/confirm")
         client.subscribe("receivers/#")
     else:
-        print("Error al conectar:", rc)
+        print(f"Error de conexión MQTT: {rc}")
 
 def on_message(client, userdata, msg):
-    global current_row, timeout_thread
+    # Procesar mensajes entrantes
+    global current_row, timeout_thread, training_active, waiting_confirmation
+    topic = msg.topic
+    payload = msg.payload.decode()
+
+    # Comandos de control de entrenamiento
+    if topic == f"{TOPIC_PREFIX}/start":
+        start_training_from_message(payload)
+        return
+    elif topic == f"{TOPIC_PREFIX}/confirm":
+        on_confirm()
+        return
+
+    # Si no estamos en entrenamiento o esperando confirmación, ignorar RSSI
+    if not training_active or waiting_confirmation:
+        return
+
+    # Procesar mensajes de los ESP32
     try:
-        data = json.loads(msg.payload.decode())
-        esp  = esp32_ids.get(msg.topic)
-        if not esp: return
+        data = json.loads(payload)
+        esp = esp32_ids.get(topic)
+        if not esp:
+            return
 
         tstr = data.get('time')
-        rssi = int(data.get('rssi',0))
-        t_idx= pd.to_datetime(tstr,format='%d/%m/%Y %H:%M:%S')
+        if not tstr:
+            tstr = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        rssi = int(data.get('rssi', -150))
+        t_idx = pd.to_datetime(tstr, format='%d/%m/%Y %H:%M:%S')
 
         with row_lock:
             if current_row is None:
                 current_row = {
-                    'time':t_idx,
-                    'Habitacion':current_room,
-                    'Posicion':current_position
+                    'time': t_idx,
+                    'Habitacion': current_room,
+                    'Posicion': current_position
                 }
-                for e in all_esp32_ids: current_row[e]=None
+                for e in all_esp32_ids:
+                    current_row[e] = None
                 timeout_thread = threading.Timer(TIMEOUT_SECONDS, write_row_to_csv)
                 timeout_thread.start()
 
-            current_row[esp]=rssi
+            current_row[esp] = rssi
+            # Si ya tenemos datos de todos los ESP32, escribir inmediatamente
             if all(current_row[e] is not None for e in all_esp32_ids):
                 write_row_to_csv()
     except Exception as e:
-        print("Error al procesar mensaje:", e)
+        print(f"Error procesando mensaje RSSI: {e}")
 
-def write_row_to_csv():
-    global current_row, timeout_thread, rows_written
-    with row_lock:
-        if current_row is None: return
-        # Completar vacíos
-        for e in all_esp32_ids:
-            if current_row[e] is None:
-                current_row[e] = -150
-        # DataFrame y orden columnas
-        df = pd.DataFrame([current_row]).set_index('time')
-        cols = all_esp32_ids + ['Habitacion','Posicion']
-        df = df[cols]
-        # Escribimos con formato de fecha
-        header = not os.path.exists(CSV_FILE) or os.path.getsize(CSV_FILE)==0
-        df.to_csv(
-            CSV_FILE, mode='a', header=header,
-            date_format='%d/%m/%Y %H:%M:%S', index_label='time'
-        )
-        # Contador y feedback
-        rows_written += 1
-        print(f"[{rows_written}/{total_readings}] {current_room}/{current_position}")
-        # Limpiar
-        current_row = None
-        if timeout_thread:
-            timeout_thread.cancel()
-            timeout_thread=None
-        # ¿Fin del bloque?
-        if rows_written >= total_readings:
-            if default_mode:
-                setup_next_default()
-            else:
-                ask_location_manual()
-
-# --- 6. ARRANQUE ---
-client = mqtt.Client()
-client.username_pw_set("fran","1234") # Si tu broker requiere autenticación, pon aquí usuario y contraseña
+# ------------ ARRANQUE ------------
 client.on_connect = on_connect
 client.on_message = on_message
 
-# Primera ubicación
-if default_mode:
-    current_room, current_position = sequence[0]
-    rows_written = 0
-    print("\n--- MODO POR DEFECTO ACTIVADO ---")
-    print(f"Harás {total_readings} lecturas en cada posición.\n")
-    print_instruction()
-else:
-    ask_location_manual()
-
 try:
-    client.connect("192.168.0.18",1883,60) # Cambia esta IP por la de tu broker MQTT
+    client.connect(MQTT_BROKER, MQTT_PORT, 60)
+    print(f"Conectando a MQTT en {MQTT_BROKER}:{MQTT_PORT}")
     client.loop_forever()
 except KeyboardInterrupt:
-    print("\nInterrumpido. Cerrando...")
+    print("\nInterrupción manual. Cerrando...")
     client.disconnect()
+    sys.exit(0)
