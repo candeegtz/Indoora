@@ -8,6 +8,12 @@ data class HomeRead(
     val estadoConfig: EstadoConfig
 )
 
+data class HomeUpdate(
+    val name: String? = null,
+    @Json(name = "estadoConfig")
+    val estadoConfig: EstadoConfig? = null
+)
+
 enum class EstadoConfig {
     @Json(name = "NOT_CONFIG")
     NOT_CONFIG,

@@ -1,13 +1,16 @@
 package com.indoora.app.navigation
 
+import HomeViewModel
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.indoora.app.data.repository.ActivityRepository
+import androidx.navigation.navArgument
 import com.indoora.app.data.repository.AuthRepository
 import com.indoora.app.data.repository.HomeRepository
 import com.indoora.app.data.repository.RoutineRepository
@@ -19,7 +22,6 @@ import com.indoora.app.feature.auth.LoginScreen
 import com.indoora.app.feature.auth.RegisterScreen
 import com.indoora.app.feature.deviceconfig.DeviceConfigScreen
 import com.indoora.app.feature.home.HomeScreen
-import com.indoora.app.feature.home.HomeViewModel
 import com.indoora.app.feature.home.HomeViewModelFactory
 import com.indoora.app.feature.profile.ProfileScreen
 import com.indoora.app.feature.profile.ProfileViewModel
@@ -27,6 +29,10 @@ import com.indoora.app.feature.profile.ProfileViewModelFactory
 import com.indoora.app.feature.routines.RoutinesScreen
 import com.indoora.app.feature.routines.RoutinesViewModel
 import com.indoora.app.feature.splash.SplashScreen
+import com.indoora.app.feature.training.TrainingScreen
+import com.indoora.app.feature.training.TrainingViewModel
+import com.indoora.app.feature.training.TrainingViewModelFactory
+import com.indoora.app.network.mqtt.MqttManager
 
 sealed class Screen(val route: String) {
     object Splash          : Screen("splash")
@@ -38,8 +44,8 @@ sealed class Screen(val route: String) {
     object DeviceConfig    : Screen("device_config/{homeId}") {
         fun createRoute(homeId: Int) = "device_config/$homeId"
     }
-    object SystemTraining  : Screen("system_training/{homeId}") {
-        fun createRoute(homeId: Int) = "system_training/$homeId"
+    object SystemTraining  : Screen("training/{homeId}") {
+        fun createRoute(homeId: Int) = "training/$homeId"
     }
     object Profile         : Screen("profile")
     object Routines : Screen("routines/{homeId}") {
@@ -64,6 +70,21 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
     val profileViewModel: ProfileViewModel = viewModel(
         factory = ProfileViewModelFactory(authRepository)
     )
+
+    // Crear el MqttManager (se conectará a continuación)
+    val mqttManager = MqttManager(
+        serverUri = "tcp://192.168.0.18:1883",   // Cambia por la IP de tu broker
+        clientId = "android_app_${System.currentTimeMillis()}"
+    )
+
+    // Referencia para poder avisar al TrainingViewModel cuando la conexión esté lista
+    var trainingViewModel: TrainingViewModel? = null
+
+    // Iniciar conexión MQTT (asíncrona)
+    mqttManager.connect(username = "", password = "") {
+        // Cuando la conexión se complete, si ya existe el ViewModel, se lo notificamos
+        trainingViewModel?.onMqttConnected()
+    }
 
     NavHost(
         navController = navController,
@@ -154,9 +175,19 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
             DeviceConfigScreen(
                 homeId = homeId,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                onNavigateBack = { navController.popBackStack() },
+                homeRepository = homeRepository
+            )
+        }
+
+        composable(Screen.Activities.route) { backStackEntry ->
+            val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
+            val activityRepository = ActivityRepository()
+            val homeRepository = HomeRepository()
+            val viewModel = ActivitiesViewModel(activityRepository, homeRepository, homeId)
+            ActivitiesScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -173,7 +204,19 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
 
         composable(Screen.SystemTraining.route) { backStackEntry ->
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
-            // TODO: SystemTrainingScreen(homeId = homeId)
+            val vm: TrainingViewModel = viewModel(
+                factory = TrainingViewModelFactory(homeRepository, mqttManager)
+            )
+            trainingViewModel = vm
+            // Si la conexión MQTT ya está lista, avisamos al ViewModel inmediatamente
+            if (mqttManager.isConnected) {
+                vm.onMqttConnected()
+            }
+            TrainingScreen(
+                homeId = homeId,
+                onNavigateBack = { navController.popBackStack() },
+                viewModel = vm
+            )
         }
 
         composable(Screen.Profile.route) {
