@@ -1,5 +1,5 @@
 {
-    "total_readings_per_position": 300,
+    "total_readings_per_position": 10,
     "mqtt_broker": "192.168.0.18",
     "mqtt_port": 1883,
     "mqtt_user": "",
