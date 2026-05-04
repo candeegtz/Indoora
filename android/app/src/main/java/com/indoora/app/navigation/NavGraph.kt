@@ -35,7 +35,7 @@ sealed class Screen(val route: String) {
     object DeviceConfig    : Screen("device_config/{homeId}") {
         fun createRoute(homeId: Int) = "device_config/$homeId"
     }
-    object SystemTraining : Screen("training/{homeId}") {
+    object SystemTraining  : Screen("training/{homeId}") {
         fun createRoute(homeId: Int) = "training/$homeId"
     }
     object Profile         : Screen("profile")
@@ -48,14 +48,24 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
     val authRepository = AuthRepository(context)
     val homeRepository = HomeRepository()
 
-    val mqttManager = MqttManager(
-        serverUri = "tcp://192.168.0.18:1883",   // IP de tu broker MQTT
-        clientId = "android_app_${System.currentTimeMillis()}"
-    )
-
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(authRepository)
     )
+
+    // Crear el MqttManager (se conectará a continuación)
+    val mqttManager = MqttManager(
+        serverUri = "tcp://192.168.0.18:1883",   // Cambia por la IP de tu broker
+        clientId = "android_app_${System.currentTimeMillis()}"
+    )
+
+    // Referencia para poder avisar al TrainingViewModel cuando la conexión esté lista
+    var trainingViewModel: TrainingViewModel? = null
+
+    // Iniciar conexión MQTT (asíncrona)
+    mqttManager.connect(username = "", password = "") {
+        // Cuando la conexión se complete, si ya existe el ViewModel, se lo notificamos
+        trainingViewModel?.onMqttConnected()
+    }
 
     NavHost(
         navController = navController,
@@ -129,15 +139,15 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                 onNavigateToDeviceConfig = {
                     navController.navigate(Screen.DeviceConfig.createRoute(homeId))
                 },
+                onNavigateToSystemTraining = {
+                    navController.navigate(Screen.SystemTraining.createRoute(homeId))
+                },
                 onNavigateToProfile = {
                     navController.navigate(Screen.Profile.route)
                 },
                 onNavigateToRoutines = {
                     navController.navigate(Screen.Routines.route)
-                },
-                onNavigateToSystemTraining = {
-                    navController.navigate(Screen.SystemTraining.createRoute(homeId))
-                },
+                }
             )
         }
 
@@ -152,13 +162,18 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
 
         composable(Screen.SystemTraining.route) { backStackEntry ->
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
-            val trainingViewModel: TrainingViewModel = viewModel(
+            val vm: TrainingViewModel = viewModel(
                 factory = TrainingViewModelFactory(homeRepository, mqttManager)
             )
+            trainingViewModel = vm
+            // Si la conexión MQTT ya está lista, avisamos al ViewModel inmediatamente
+            if (mqttManager.isConnected) {
+                vm.onMqttConnected()
+            }
             TrainingScreen(
                 homeId = homeId,
                 onNavigateBack = { navController.popBackStack() },
-                viewModel = trainingViewModel
+                viewModel = vm
             )
         }
 
