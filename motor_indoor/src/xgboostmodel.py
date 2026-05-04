@@ -3,6 +3,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
 import joblib
+import paho.mqtt.client as mqtt
+import json
+import time
+import os
 
 # Cargar los datos desde el archivo CSV
 file_path = 'src/logs/DatosparaEntrenar.csv'  # Cambia esta ruta a la ubicación de tu archivo
@@ -82,3 +86,27 @@ joblib.dump(model_posicion, 'src/logs/xgboost_posicion_model.pkl')
 joblib.dump(label_encoder_posicion, 'src/logs/xgboost_label_encoder_posicion.pkl')
 
 print("Modelos entrenados y guardados correctamente.")
+
+# Notificación MQTT a la app de que el modelo está listo
+try:
+    # Obtener el directorio del script y cargar config.json
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    CONFIG_FILE = os.path.join(BASE_DIR, 'config.json')
+    with open(CONFIG_FILE, 'r') as f:
+        cfg = json.load(f)
+    
+    # Obtener configuración MQTT
+    broker = cfg.get("mqtt_broker", "localhost")
+    port = cfg.get("mqtt_port", 1883)
+    prefix = cfg.get("training_topic_prefix", "training")
+    client = mqtt.Client()
+    client.connect(broker, port, 60)
+    client.loop_start()
+    # Publicar mensaje de modelo listo
+    client.publish(f"{prefix}/model_ready", json.dumps({"type": "model_ready"}))
+    time.sleep(0.5)
+    client.loop_stop()
+    client.disconnect()
+    print("Notificación MQTT enviada a la app")
+except Exception as e:
+    print(f"No se pudo enviar notificación MQTT: {e}")
