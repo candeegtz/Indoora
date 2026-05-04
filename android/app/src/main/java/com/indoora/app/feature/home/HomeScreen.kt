@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
@@ -28,7 +29,8 @@ fun HomeScreen(
     onNavigateToDeviceConfig: () -> Unit = {},
     onNavigateToSystemTraining: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    onNavigateToRoutines: () -> Unit = {}
+    onNavigateToRoutines: () -> Unit = {},
+    onNavigateToActivities: () -> Unit = {}
 ) {
     val homeState by viewModel.homeState.collectAsState()
 
@@ -57,6 +59,7 @@ fun HomeScreen(
                 onNavigateToHome = { /* ya estamos aquí */ },
                 onNavigateToProfile = onNavigateToProfile,
                 onNavigateToRoutines = onNavigateToRoutines,
+                onNavigateToActivities = onNavigateToActivities,
                 currentScreen = "home"
             )
         }
@@ -238,6 +241,7 @@ private fun BottomNavigationBar(
     onNavigateToHome: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToRoutines: () -> Unit,
+    onNavigateToActivities: () -> Unit,
     currentScreen: String
 ) {
     NavigationBar(
@@ -271,6 +275,14 @@ private fun BottomNavigationBar(
             label = { Text("Perfil") },
             selected = currentScreen == "profile",
             onClick = onNavigateToProfile,
+            colors = navBarItemColors()
+        )
+
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Add, contentDescription = "Actividades") }, // o usa otro icono
+            label = { Text("Actividades") },
+            selected = currentScreen == "activities",
+            onClick = onNavigateToActivities,
             colors = navBarItemColors()
         )
     }

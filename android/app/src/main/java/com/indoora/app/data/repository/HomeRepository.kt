@@ -1,6 +1,8 @@
 package com.indoora.app.data.repository
 
 import com.indoora.app.data.model.HomeRead
+import com.indoora.app.data.model.PositionRead
+import com.indoora.app.data.model.RoomRead
 import com.indoora.app.network.ApiService
 import com.indoora.app.network.RetrofitClient
 
@@ -16,6 +18,34 @@ class HomeRepository {
                 } ?: Result.failure(Exception("Empty response"))
             } else {
                 Result.failure(Exception("Error ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getRooms(homeId: Int): Result<List<RoomRead>> {
+        return try {
+            val response = api.getRoomsByHomeId(homeId)
+            if (response.isSuccessful) {
+                response.body()?.let { Result.success(it) }
+                    ?: Result.failure(Exception("Empty response"))
+            } else {
+                Result.failure(Exception("Error ${response.code()}: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getPositions(roomId: Int): Result<List<PositionRead>> {
+        return try {
+            val response = api.getPositionsByRoomId(roomId)
+            if (response.isSuccessful) {
+                response.body()?.let { Result.success(it) }
+                    ?: Result.failure(Exception("Empty response"))
+            } else {
+                Result.failure(Exception("Error ${response.code()}: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
