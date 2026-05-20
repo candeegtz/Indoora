@@ -99,9 +99,9 @@ def send_deviation_alert(room, position):
         }
         headers = {"Content-Type": "application/json"}
         if API_KEY:
-            headers["MOTOR-API-Key"] = API_KEY
+            headers["motor-api-key"] = API_KEY
         try:
-            response = requests.post(STABLE_ENDPOINT, json=payload, headers=headers, timeout=3)
+            response = requests.post(STABLE_ENDPOINT, json=payload, headers=headers, timeout=10)
             if response.status_code == 200:
                 print(f"ALERTA ENVIADA: desviación superó {DEVIATION_TIMEOUT_SECONDS/60} minutos en {room} - {position}")
                 # Limpiar para no repetir
@@ -156,7 +156,7 @@ def send_to_backend(room, position):
 
     headers = {"Content-Type": "application/json"}
     if API_KEY:
-        headers["X-API-Key"] = API_KEY
+        headers["motor-api-key"] = API_KEY
 
     try:
         response = requests.post(STABLE_ENDPOINT, json=payload, headers=headers, timeout=3)
