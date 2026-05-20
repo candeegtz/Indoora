@@ -5,10 +5,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Credenciales del correo de la aplicación
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
 
 def send_alert_email(destino: str, mensaje: str):
+    '''Envía un correo de alerta a la dirección especificada'''
     if not destino or not EMAIL_USER:
         print("Email no configurado. No se envió alerta.")
         return

@@ -8,7 +8,8 @@ from app.routers import (
     auth_router,
     routine_router,
     activity_router,
-    home_router
+    home_router,
+    positioning_router
 )
 
 app = FastAPI(
@@ -37,6 +38,7 @@ app.include_router(device_router.router)
 app.include_router(routine_router.router)
 app.include_router(activity_router.router)
 app.include_router(home_router.router)
+app.include_router(positioning_router.router)
 
 @app.get("/")
 def root():
