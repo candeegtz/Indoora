@@ -1,8 +1,19 @@
 {
-    "total_readings_per_position": 10,
+    "total_readings_per_position": 150,
     "mqtt_broker": "192.168.0.18",
     "mqtt_port": 1883,
     "mqtt_user": "",
     "mqtt_password": "",
-    "training_topic_prefix": "training"
+    "training_topic_prefix": "training",
+    "mqtt_topic_receivers": "receivers/#",
+    "backend_url": "http://localhost:8000",
+    "topic_stable": "motor/stable_position",
+    "topic_config": "motor/config",
+    "models_dir": "src/logs",
+    "output_csv": "src/logs/predicciones_xgboost.csv",
+    "stable_window_size": 5,
+    "timeout_seconds": 3,
+    "umbral_confianza_habitacion": 0.40,
+    "umbral_confianza_posicion": 0.00,
+    "deviation_timeout_seconds": 180
 }
