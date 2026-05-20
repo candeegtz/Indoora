@@ -1,23 +1,20 @@
 package com.indoora.app.feature.home
 
-import HomeViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.indoora.app.data.model.AlertResponse
 import com.indoora.app.data.model.EstadoConfig
 import com.indoora.app.feature.auth.UiState
 import com.indoora.app.ui.theme.indooraBackground
@@ -35,9 +32,16 @@ fun HomeScreen(
 ) {
     val homeState by viewModel.homeState.collectAsState()
     val refreshTrigger by viewModel.refreshTrigger.collectAsState()
+    val unreadAlerts by viewModel.unreadAlerts.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(refreshTrigger) {
         viewModel.loadHome(homeId)
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.checkAndActivateMotor(homeId)
+        viewModel.refreshAlerts() // Cargar alertas al iniciar
     }
 
     Scaffold(
@@ -87,8 +91,10 @@ fun HomeScreen(
                     val home = (homeState as UiState.Success).data
                     NotificationCard(
                         estadoConfig = home.estadoConfig,
+                        alerts = unreadAlerts,
                         onNavigateToDeviceConfig = onNavigateToDeviceConfig,
-                        onNavigateToSystemTraining = onNavigateToSystemTraining
+                        onNavigateToSystemTraining = onNavigateToSystemTraining,
+                        onDismissAlert = { alertId -> viewModel.dismissAlert(alertId) }
                     )
                 }
 
@@ -110,8 +116,10 @@ fun HomeScreen(
 @Composable
 private fun NotificationCard(
     estadoConfig: EstadoConfig,
+    alerts: List<AlertResponse>,
     onNavigateToDeviceConfig: () -> Unit,
-    onNavigateToSystemTraining: () -> Unit
+    onNavigateToSystemTraining: () -> Unit,
+    onDismissAlert: (Int) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -136,7 +144,6 @@ private fun NotificationCard(
             Spacer(modifier = Modifier.height(16.dp))
 
             when (estadoConfig) {
-
                 EstadoConfig.NOT_CONFIG -> {
                     Icon(
                         imageVector = Icons.Default.Settings,
@@ -144,9 +151,7 @@ private fun NotificationCard(
                         tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                         modifier = Modifier.size(48.dp)
                     )
-
                     Spacer(modifier = Modifier.height(12.dp))
-
                     Text(
                         text = "Configura tus dispositivos",
                         fontSize = 16.sp,
@@ -154,18 +159,14 @@ private fun NotificationCard(
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center
                     )
-
                     Spacer(modifier = Modifier.height(8.dp))
-
                     Text(
                         text = "Para empezar a usar Indoora, necesitas configurar los dispositivos de tu hogar.",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center
                     )
-
                     Spacer(modifier = Modifier.height(16.dp))
-
                     Button(
                         onClick = onNavigateToDeviceConfig,
                         modifier = Modifier.fillMaxWidth(),
@@ -174,10 +175,7 @@ private fun NotificationCard(
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            "Configurar dispositivos",
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                        Text("Configurar dispositivos", color = MaterialTheme.colorScheme.onBackground)
                     }
                 }
 
@@ -188,9 +186,7 @@ private fun NotificationCard(
                         tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                         modifier = Modifier.size(48.dp)
                     )
-
                     Spacer(modifier = Modifier.height(12.dp))
-
                     Text(
                         text = "Entrena el sistema",
                         fontSize = 16.sp,
@@ -198,18 +194,14 @@ private fun NotificationCard(
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center
                     )
-
                     Spacer(modifier = Modifier.height(8.dp))
-
                     Text(
                         text = "Completa el entrenamiento del motor Indoor para comenzar a detectar actividades.",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center
                     )
-
                     Spacer(modifier = Modifier.height(16.dp))
-
                     Button(
                         onClick = onNavigateToSystemTraining,
                         modifier = Modifier.fillMaxWidth(),
@@ -218,20 +210,50 @@ private fun NotificationCard(
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            "Iniciar entrenamiento",
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                        Text("Iniciar entrenamiento", color = MaterialTheme.colorScheme.onBackground)
                     }
                 }
 
                 EstadoConfig.CONFIG_COMPLETED -> {
-                    Text(
-                        text = "Sin notificaciones",
-                        fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                        textAlign = TextAlign.Center
-                    )
+                    if (alerts.isEmpty()) {
+                        Text(
+                            text = "Sin notificaciones",
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        Column {
+                            alerts.forEach { alert ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = alert.message,
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        IconButton(onClick = { onDismissAlert(alert.id) }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Descartar",
+                                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -251,37 +273,28 @@ private fun BottomNavigationBar(
         contentColor = MaterialTheme.colorScheme.onBackground
     ) {
         NavigationBarItem(
-            icon = {
-                Icon(Icons.Default.Home, contentDescription = "Inicio")
-            },
+            icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
             label = { Text("Inicio") },
             selected = currentScreen == "home",
             onClick = onNavigateToHome,
             colors = navBarItemColors()
         )
-
         NavigationBarItem(
-            icon = {
-                Icon(Icons.Default.List, contentDescription = "Rutinas")
-            },
+            icon = { Icon(Icons.Default.List, contentDescription = "Rutinas") },
             label = { Text("Rutinas") },
             selected = currentScreen == "routines",
             onClick = onNavigateToRoutines,
             colors = navBarItemColors()
         )
-
         NavigationBarItem(
-            icon = {
-                Icon(Icons.Default.AccountCircle, contentDescription = "Perfil")
-            },
+            icon = { Icon(Icons.Default.AccountCircle, contentDescription = "Perfil") },
             label = { Text("Perfil") },
             selected = currentScreen == "profile",
             onClick = onNavigateToProfile,
             colors = navBarItemColors()
         )
-
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Add, contentDescription = "Actividades") }, // o usa otro icono
+            icon = { Icon(Icons.Default.Add, contentDescription = "Actividades") },
             label = { Text("Actividades") },
             selected = currentScreen == "activities",
             onClick = onNavigateToActivities,

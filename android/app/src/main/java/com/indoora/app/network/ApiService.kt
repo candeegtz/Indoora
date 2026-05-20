@@ -3,6 +3,7 @@ package com.indoora.app.network
 import com.indoora.app.data.model.ActivityCreate
 import com.indoora.app.data.model.ActivityRead
 import com.indoora.app.data.model.ActivityWithPositionsResponse
+import com.indoora.app.data.model.AlertResponse
 import com.indoora.app.data.model.EmisorDeviceCreate
 import com.indoora.app.data.model.EmisorDeviceRead
 import com.indoora.app.data.model.HomeRead
@@ -18,6 +19,7 @@ import com.indoora.app.data.model.RoomRead
 import com.indoora.app.data.model.RoutineCreate
 import com.indoora.app.data.model.RoutineRead
 import com.indoora.app.data.model.RoutineUpdate
+import com.indoora.app.data.model.StablePositionRequest
 import com.indoora.app.data.model.UserCreate
 import com.indoora.app.data.model.UserRead
 import com.indoora.app.data.model.UserUpdate
@@ -138,4 +140,15 @@ interface ApiService {
     @GET("activities/{activity_id}")
     suspend fun getActivityById(@Path("activity_id") activityId: Int): Response<ActivityWithPositionsResponse>
 
+    @GET("positioning/rooms_positions/{homeId}")
+    suspend fun getRoomsPositions(@Path("homeId") homeId: Int): Response<Map<String, List<String>>>
+
+    @POST("positioning/stable")
+    suspend fun sendStablePosition(@Body request: StablePositionRequest): Response<Unit>
+
+    @GET("positioning/alerts/unread/{homeId}")
+    suspend fun getUnreadAlerts(@Path("homeId") homeId: Int): Response<List<AlertResponse>>
+
+    @PATCH("positioning/alerts/{alertId}/read")
+    suspend fun markAlertAsRead(@Path("alertId") alertId: Int): Response<Unit>
 }

@@ -76,6 +76,15 @@ class MqttManager(
         }
     }
 
+    fun unsubscribe(topic: String) {
+        if (::mqttClient.isInitialized && _isConnected) {
+            mqttClient.unsubscribe(topic)
+            Log.d("MqttManager", "Desuscrito de $topic")
+        } else {
+            Log.w("MqttManager", "No conectado, no se pudo desuscribir de $topic")
+        }
+    }
+
     fun publish(topic: String, payload: String, qos: Int = 1, retained: Boolean = false) {
         if (::mqttClient.isInitialized && _isConnected) {
             val message = MqttMessage(payload.toByteArray()).apply {
