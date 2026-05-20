@@ -3,6 +3,7 @@ from datetime import datetime, time
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import JSON
+from sqlalchemy.dialects.postgresql import JSONB 
 from sqlalchemy.orm import Mapped
 
 class EstadoConfig(str, enum.Enum):
@@ -146,7 +147,7 @@ class Routine(SQLModel, table=True):
     description: Optional[str] = None
     start_time: time
     end_time: time
-    days: List[DaysOfWeek] = Field(sa_column=Column(JSON))
+    days: List[DaysOfWeek] = Field(sa_column=Column(JSONB))
 
     activity_id: int = Field(foreign_key="activity.id", index=True)
     activity: Mapped["Activity"] = Relationship(back_populates="routines")
