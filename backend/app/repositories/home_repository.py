@@ -1,6 +1,6 @@
 from typing import List
 
-from app.models.models import ActivityPosition, Home, Position, Room, Activity, RoomType, User, ROOM_TYPE_LABELS
+from app.models.models import ActivityPosition, Home, Position, Room, Activity, RoomType, User, ROOM_TYPE_LABELS, UserType
 from app.schemas.home import HomeCreate, HomeUpdate, PositionCreate, RoomCreate, ActivityCreate, ActivityUpdate
 from sqlmodel import Session, select, delete
 
@@ -201,3 +201,19 @@ class HomeRepository:
         stmt = select(ActivityPosition.position_id).where(ActivityPosition.activity_id == activity_id)
         position_ids = self.session.exec(stmt).all()
         return activity, position_ids
+    
+    # ------------Positioning------------
+    def get_rooms_and_positions(self, home_id: int) -> dict:
+        '''Diccionario de habitaciones y posiciones para el motor indoor'''
+        rooms = self.get_rooms_by_home_id(home_id)
+        result = {}
+        for room in rooms:
+            positions = self.get_positions_by_room_id(room.id)
+            result[room.name] = [p.name for p in positions]
+        return result
+
+    def get_supervisor_emails_by_home(self, home_id: int) -> List[str]:
+        users = self.session.exec(
+            select(User).where(User.home_id == home_id, User.user_type.in_([UserType.SUPERVISOR, UserType.SUPERVISOR_CREATOR]))
+        ).all()
+        return [u.email for u in users if u.email]

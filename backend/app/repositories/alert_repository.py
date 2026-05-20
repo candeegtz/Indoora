@@ -6,6 +6,9 @@ class AlertRepository:
     def __init__(self, session: Session):
         self.session = session
 
+    def get_by_id(self, alert_id: int) -> Alert | None:
+        return self.session.get(Alert, alert_id)
+
     def save_alert(self, alert: Alert) -> Alert:
         self.session.add(alert)
         self.session.commit()
