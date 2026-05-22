@@ -1,8 +1,9 @@
 import enum
-from datetime import time
+from datetime import datetime, time
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import JSON
+from sqlalchemy.dialects.postgresql import JSONB 
 from sqlalchemy.orm import Mapped
 
 class EstadoConfig(str, enum.Enum):
@@ -60,6 +61,7 @@ class Home(SQLModel, table=True):
         back_populates="home",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
+    alerts: Mapped[List["Alert"]] = Relationship(back_populates="home")
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -145,7 +147,17 @@ class Routine(SQLModel, table=True):
     description: Optional[str] = None
     start_time: time
     end_time: time
-    days: List[DaysOfWeek] = Field(sa_column=Column(JSON))
+    days: List[DaysOfWeek] = Field(sa_column=Column(JSONB))
 
     activity_id: int = Field(foreign_key="activity.id", index=True)
     activity: Mapped["Activity"] = Relationship(back_populates="routines")
+
+class Alert(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    home_id: int = Field(foreign_key="home.id")
+    message: str
+    timestamp: datetime = Field(default_factory=datetime.now)
+    is_read: bool = False
+
+    # Relaciones (opcional)
+    home: "Home" = Relationship(back_populates="alerts")

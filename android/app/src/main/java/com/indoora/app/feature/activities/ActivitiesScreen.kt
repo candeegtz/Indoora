@@ -1,4 +1,3 @@
-// feature/activities/ActivitiesScreen.kt
 package com.indoora.app.feature.activities
 
 import androidx.compose.animation.*
@@ -25,13 +24,15 @@ import com.indoora.app.data.model.ActivityRead
 import com.indoora.app.data.model.ActivityWithPositionsResponse
 import com.indoora.app.feature.auth.UiState
 import com.indoora.app.ui.theme.indooraBackground
-import kotlinx.coroutines.delay
+import com.indoora.app.feature.common.MotorRestartDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivitiesScreen(
     viewModel: ActivitiesViewModel,
-    onNavigateBack: () -> Unit
+    homeId: Int,
+    onNavigateBack: () -> Unit,
+    onPublishConfigToMotor: (Int) -> Unit = {}
 ) {
     val activitiesState by viewModel.activitiesState.collectAsStateWithLifecycle()
     val createState by viewModel.createState.collectAsStateWithLifecycle()
@@ -45,12 +46,15 @@ fun ActivitiesScreen(
     var deletingActivity by remember { mutableStateOf<ActivityRead?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
+    // Diálogo de reinicio del motor
+    var showMotorRestartDialog by remember { mutableStateOf(false) }
+    var isSendingConfig by remember { mutableStateOf(false) }
+
     // ========== Manejo de edición ==========
     LaunchedEffect(selectedActivityState) {
         when (selectedActivityState) {
             is UiState.Success -> showEditDialog = true
             is UiState.Error -> {
-                // Si hay error, cerramos el diálogo y reseteamos
                 showEditDialog = false
                 editingActivityId = null
                 viewModel.resetSelectedActivityState()
@@ -59,17 +63,19 @@ fun ActivitiesScreen(
         }
     }
 
-    // ========== Recarga al crear/actualizar/eliminar ==========
     LaunchedEffect(createState, updateState, deleteState) {
         when {
-            createState is UiState.Success || createState is UiState.Error -> {
-                delay(3000); viewModel.resetCreateState()
+            createState is UiState.Success -> {
+                viewModel.resetCreateState()
+                showMotorRestartDialog = true
             }
-            updateState is UiState.Success || updateState is UiState.Error -> {
-                delay(3000); viewModel.resetUpdateState()
+            updateState is UiState.Success -> {
+                viewModel.resetUpdateState()
+                showMotorRestartDialog = true
             }
-            deleteState is UiState.Success || deleteState is UiState.Error -> {
-                delay(3000); viewModel.resetDeleteState()
+            deleteState is UiState.Success -> {
+                viewModel.resetDeleteState()
+                showMotorRestartDialog = true
             }
         }
     }
@@ -188,7 +194,6 @@ fun ActivitiesScreen(
                     }
                 }
                 else -> {
-                    // Idle – mostrar loading (por si acaso)
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.onBackground)
                     }
@@ -203,7 +208,7 @@ fun ActivitiesScreen(
                 )
             }
 
-            // Diálogo de edición (se muestra cuando selectedActivityState es Success y showEditDialog true)
+            // Diálogo de edición
             if (showEditDialog && selectedActivityState is UiState.Success) {
                 EditActivityDialog(
                     viewModel = viewModel,
@@ -261,6 +266,25 @@ fun ActivitiesScreen(
                     },
                     containerColor = Color(0xFF4A4458),
                     shape = RoundedCornerShape(16.dp)
+                )
+            }
+
+            // Diálogo de reinicio del motor
+            if (showMotorRestartDialog) {
+                MotorRestartDialog(
+                    visible = showMotorRestartDialog,
+                    isSendingConfig = isSendingConfig,
+                    onDismiss = {
+                        showMotorRestartDialog = false
+                        isSendingConfig = false
+                    },
+                    onSendConfig = {
+                        if (!isSendingConfig) {
+                            isSendingConfig = true
+                            onPublishConfigToMotor(homeId)
+                            isSendingConfig = false
+                        }
+                    }
                 )
             }
 

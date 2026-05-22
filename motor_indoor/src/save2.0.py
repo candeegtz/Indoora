@@ -23,7 +23,7 @@ MQTT_PORT = cfg.get("mqtt_port", 1883)
 MQTT_USER = cfg.get("mqtt_user", "")
 MQTT_PASSWORD = cfg.get("mqtt_password", "")
 TOPIC_PREFIX = cfg.get("training_topic_prefix", "training")
-TOTAL_READINGS = cfg.get("total_readings_per_position", 10)
+TOTAL_READINGS = cfg.get("total_readings_per_position", 300)
 
 # Variables globales
 sequence = []

@@ -92,6 +92,8 @@ fun TrainingScreen(
                             state.sequence.forEach { step ->
                                 Text("• ${step.room} - ${step.position}", fontSize = 14.sp)
                             }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Antes de comenzar el entrenamiento, ejecuta el archivo 'runner.bat' en el ordenador local")
                             Spacer(modifier = Modifier.height(20.dp))
                             Button(
                                 onClick = { viewModel.startTraining() },
@@ -195,6 +197,8 @@ fun TrainingScreen(
                             Text("Modelo entrenado con éxito", fontSize = 22.sp, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(12.dp))
                             Text("El sistema ya está completamente configurado.", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("Ejecuta el archivo 'iniciar_motor.bat' para que el sistema pueda detectar actividades.", fontSize = 16.sp)
                             Spacer(modifier = Modifier.height(24.dp))
                             Button(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
                                 Text("Ir al inicio")

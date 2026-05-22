@@ -1,16 +1,17 @@
 package com.indoora.app.navigation
 
-import HomeViewModel
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.indoora.app.data.repository.ActivityRepository
 import androidx.navigation.navArgument
+import com.indoora.app.data.repository.ActivityRepository
 import com.indoora.app.data.repository.AuthRepository
 import com.indoora.app.data.repository.HomeRepository
 import com.indoora.app.data.repository.RoutineRepository
@@ -22,6 +23,7 @@ import com.indoora.app.feature.auth.LoginScreen
 import com.indoora.app.feature.auth.RegisterScreen
 import com.indoora.app.feature.deviceconfig.DeviceConfigScreen
 import com.indoora.app.feature.home.HomeScreen
+import com.indoora.app.feature.home.HomeViewModel
 import com.indoora.app.feature.home.HomeViewModelFactory
 import com.indoora.app.feature.profile.ProfileScreen
 import com.indoora.app.feature.profile.ProfileViewModel
@@ -33,6 +35,7 @@ import com.indoora.app.feature.training.TrainingScreen
 import com.indoora.app.feature.training.TrainingViewModel
 import com.indoora.app.feature.training.TrainingViewModelFactory
 import com.indoora.app.network.mqtt.MqttManager
+import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String) {
     object Splash          : Screen("splash")
@@ -48,11 +51,10 @@ sealed class Screen(val route: String) {
         fun createRoute(homeId: Int) = "training/$homeId"
     }
     object Profile         : Screen("profile")
-    object Routines : Screen("routines/{homeId}") {
+    object Routines        : Screen("routines/{homeId}") {
         fun createRoute(homeId: Int) = "routines/$homeId"
     }
-
-    object Activities : Screen("activities/{homeId}") {
+    object Activities      : Screen("activities/{homeId}") {
         fun createRoute(homeId: Int) = "activities/$homeId"
     }
 }
@@ -71,18 +73,14 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         factory = ProfileViewModelFactory(authRepository)
     )
 
-    // Crear el MqttManager (se conectará a continuación)
     val mqttManager = MqttManager(
         serverUri = "tcp://192.168.0.18:1883",   // Cambia por la IP de tu broker
         clientId = "android_app_${System.currentTimeMillis()}"
     )
 
-    // Referencia para poder avisar al TrainingViewModel cuando la conexión esté lista
     var trainingViewModel: TrainingViewModel? = null
 
-    // Iniciar conexión MQTT (asíncrona)
     mqttManager.connect(username = "", password = "") {
-        // Cuando la conexión se complete, si ya existe el ViewModel, se lo notificamos
         trainingViewModel?.onMqttConnected()
     }
 
@@ -150,7 +148,7 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         composable(Screen.Home.route) { backStackEntry ->
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
             val homeViewModel: HomeViewModel = viewModel(
-                factory = HomeViewModelFactory(homeRepository)
+                factory = HomeViewModelFactory(homeRepository, mqttManager, context)
             )
             HomeScreen(
                 viewModel = homeViewModel,
@@ -167,7 +165,9 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                 onNavigateToRoutines = {
                     navController.navigate(Screen.Routines.createRoute(homeId))
                 },
-                onNavigateToActivities = { navController.navigate(Screen.Activities.createRoute(homeId)) }
+                onNavigateToActivities = {
+                    navController.navigate(Screen.Activities.createRoute(homeId))
+                }
             )
         }
 
@@ -183,22 +183,21 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         composable(Screen.Activities.route) { backStackEntry ->
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
             val activityRepository = ActivityRepository()
-            val homeRepository = HomeRepository()
             val viewModel = ActivitiesViewModel(activityRepository, homeRepository, homeId)
-            ActivitiesScreen(
-                viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
 
-        composable(Screen.Activities.route) { backStackEntry ->
-            val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
-            val activityRepository = ActivityRepository()
-            val homeRepository = HomeRepository()
-            val viewModel = ActivitiesViewModel(activityRepository, homeRepository, homeId)
+            val homeViewModel: HomeViewModel = viewModel(
+                factory = HomeViewModelFactory(homeRepository, mqttManager, context)
+            )
+
             ActivitiesScreen(
                 viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
+                homeId = homeId,  // ← Añadir este parámetro
+                onNavigateBack = { navController.popBackStack() },
+                onPublishConfigToMotor = { id ->
+                    viewModel.viewModelScope.launch {
+                        homeViewModel.publishHouseConfigToMotor(id)
+                    }
+                }
             )
         }
 
@@ -208,7 +207,6 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                 factory = TrainingViewModelFactory(homeRepository, mqttManager)
             )
             trainingViewModel = vm
-            // Si la conexión MQTT ya está lista, avisamos al ViewModel inmediatamente
             if (mqttManager.isConnected) {
                 vm.onMqttConnected()
             }
@@ -222,9 +220,7 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         composable(Screen.Profile.route) {
             ProfileScreen(
                 viewModel = profileViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -232,10 +228,20 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
             val routineRepository = RoutineRepository()
             val viewModel = RoutinesViewModel(routineRepository, homeId)
+
+            val homeViewModel: HomeViewModel = viewModel(
+                factory = HomeViewModelFactory(homeRepository, mqttManager, context)
+            )
+
             RoutinesScreen(
                 viewModel = viewModel,
                 homeId = homeId,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onPublishConfigToMotor = { id ->
+                    viewModel.viewModelScope.launch {
+                        homeViewModel.publishHouseConfigToMotor(id)
+                    }
+                }
             )
         }
     }

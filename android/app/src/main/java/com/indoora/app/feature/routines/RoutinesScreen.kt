@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -29,6 +28,7 @@ import com.indoora.app.data.model.RoutineRead
 import com.indoora.app.data.model.RoutineUpdate
 import com.indoora.app.data.repository.ActivityRepository
 import com.indoora.app.feature.auth.UiState
+import com.indoora.app.feature.common.MotorRestartDialog
 import com.indoora.app.ui.theme.indooraBackground
 import kotlinx.coroutines.delay
 
@@ -37,7 +37,8 @@ import kotlinx.coroutines.delay
 fun RoutinesScreen(
     viewModel: RoutinesViewModel,
     homeId: Int,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onPublishConfigToMotor: (Int) -> Unit = {}
 ) {
     val routinesState by viewModel.routinesState.collectAsStateWithLifecycle()
     val createState by viewModel.createState.collectAsStateWithLifecycle()
@@ -58,6 +59,10 @@ fun RoutinesScreen(
     var activities by remember { mutableStateOf<List<ActivityRead>>(emptyList()) }
     var isLoadingActivities by remember { mutableStateOf(true) }
     var activityNameMap by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
+
+    // Diálogo de reinicio del motor y envío de la configuración
+    var showMotorRestartDialog by remember { mutableStateOf(false) }
+    var isSendingConfig by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         isLoadingActivities = true
@@ -94,6 +99,24 @@ fun RoutinesScreen(
         viewModel.resetCreateState()
         viewModel.resetUpdateState()
         viewModel.resetDeleteState()
+    }
+
+    // Mostrar diálogo de reinicio cuando la operación es exitosa
+    LaunchedEffect(createState, updateState, deleteState) {
+        when {
+            createState is UiState.Success -> {
+                viewModel.resetCreateState()
+                showMotorRestartDialog = true
+            }
+            updateState is UiState.Success -> {
+                viewModel.resetUpdateState()
+                showMotorRestartDialog = true
+            }
+            deleteState is UiState.Success -> {
+                viewModel.resetDeleteState()
+                showMotorRestartDialog = true
+            }
+        }
     }
 
     // Días para el filtro (null = Todos)
@@ -281,6 +304,25 @@ fun RoutinesScreen(
                 )
             }
 
+            // Diálogo de reinicio del motor
+            if (showMotorRestartDialog) {
+                MotorRestartDialog(
+                    visible = showMotorRestartDialog,
+                    isSendingConfig = isSendingConfig,
+                    onDismiss = {
+                        showMotorRestartDialog = false
+                        isSendingConfig = false
+                    },
+                    onSendConfig = {
+                        if (!isSendingConfig) {
+                            isSendingConfig = true
+                            onPublishConfigToMotor(homeId)
+                            isSendingConfig = false
+                        }
+                    }
+                )
+            }
+
             val feedback = when {
                 createState is UiState.Success -> "Rutina creada correctamente"
                 createState is UiState.Error -> (createState as UiState.Error).message
@@ -405,7 +447,7 @@ fun CreateRoutineDialog(
                     value = description, onValueChange = { description = it },
                     label = { Text("Descripción (opcional)", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                    colors = OutlinedTextFieldDefaults.colors(),
                     textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -425,7 +467,7 @@ fun CreateRoutineDialog(
                                 Text("Formato HH:MM (24h)", color = Color.Red, fontSize = 10.sp)
                         },
                         modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                        colors = OutlinedTextFieldDefaults.colors(),
                         textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                     )
                     OutlinedTextField(
@@ -444,7 +486,7 @@ fun CreateRoutineDialog(
                                 Text("Formato HH:MM (24h)", color = Color.Red, fontSize = 10.sp)
                         },
                         modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                        colors = OutlinedTextFieldDefaults.colors(),
                         textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                     )
                 }
@@ -585,14 +627,14 @@ fun EditRoutineDialog(
                     label = { Text("Nombre", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                    colors = OutlinedTextFieldDefaults.colors(),
                     textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                 )
                 OutlinedTextField(
                     value = description, onValueChange = { description = it },
                     label = { Text("Descripción (opcional)", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                    colors = OutlinedTextFieldDefaults.colors(),
                     textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -612,7 +654,7 @@ fun EditRoutineDialog(
                                 Text("Formato HH:MM (24h)", color = Color.Red, fontSize = 10.sp)
                         },
                         modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                        colors = OutlinedTextFieldDefaults.colors(),
                         textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                     )
                     OutlinedTextField(
@@ -631,7 +673,7 @@ fun EditRoutineDialog(
                                 Text("Formato HH:MM (24h)", color = Color.Red, fontSize = 10.sp)
                         },
                         modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                        colors = OutlinedTextFieldDefaults.colors(),
                         textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                     )
                 }
@@ -672,7 +714,7 @@ fun EditRoutineDialog(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(/* igual */),
+                        colors = OutlinedTextFieldDefaults.colors(),
                         textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
                     )
                     DropdownMenu(
