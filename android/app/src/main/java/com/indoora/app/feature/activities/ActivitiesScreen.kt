@@ -24,6 +24,7 @@ import com.indoora.app.data.model.ActivityRead
 import com.indoora.app.data.model.ActivityWithPositionsResponse
 import com.indoora.app.feature.auth.UiState
 import com.indoora.app.ui.theme.indooraBackground
+import com.indoora.app.feature.common.MotorRestartDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -270,72 +271,20 @@ fun ActivitiesScreen(
 
             // Diálogo de reinicio del motor
             if (showMotorRestartDialog) {
-                AlertDialog(
-                    onDismissRequest = { showMotorRestartDialog = false },
-                    title = {
-                        Text(
-                            "Reiniciar motor",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                MotorRestartDialog(
+                    visible = showMotorRestartDialog,
+                    isSendingConfig = isSendingConfig,
+                    onDismiss = {
+                        showMotorRestartDialog = false
+                        isSendingConfig = false
                     },
-                    text = {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                "Para aplicar los cambios, debes reiniciar el motor de posicionamiento.",
-                                color = Color.White.copy(alpha = 0.9f)
-                            )
-                            Text(
-                                "Cuando el motor esté listo, pulsa 'Enviar configuración'.",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 14.sp
-                            )
-                            if (isSendingConfig) {
-                                LinearProgressIndicator(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    color = Color.White
-                                )
-                            }
+                    onSendConfig = {
+                        if (!isSendingConfig) {
+                            isSendingConfig = true
+                            onPublishConfigToMotor(homeId)
+                            isSendingConfig = false
                         }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                if (!isSendingConfig) {
-                                    isSendingConfig = true
-                                    onPublishConfigToMotor(homeId)
-                                    // Simular que el envío termina después de un momento
-                                    // En realidad, onPublishConfigToMotor es síncrono
-                                    isSendingConfig = false
-                                }
-                            },
-                            enabled = !isSendingConfig
-                        ) {
-                            if (isSendingConfig) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text("Enviar configuración", color = Color.White)
-                            }
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                showMotorRestartDialog = false
-                                isSendingConfig = false
-                            }
-                        ) {
-                            Text("Cerrar", color = Color.White.copy(alpha = 0.7f))
-                        }
-                    },
-                    containerColor = Color(0xFF4A4458),
-                    shape = RoundedCornerShape(16.dp)
+                    }
                 )
             }
 
