@@ -1,5 +1,6 @@
 package com.indoora.app.feature.auth
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.indoora.app.data.model.LoginResponse
@@ -10,11 +11,16 @@ import com.indoora.app.data.model.UserCreate
 import com.indoora.app.data.model.UserRead
 import com.indoora.app.data.repository.AuthRepository
 import com.indoora.app.feature.auth.components.PositionData
+import com.indoora.app.network.RetrofitClient
+import com.indoora.app.network.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
+class AuthViewModel(
+    private val repository: AuthRepository,
+    private val context: Context  
+) : ViewModel() {
 
     private val _loginState = MutableStateFlow<UiState<LoginResponse>>(UiState.Idle)
     val loginState: StateFlow<UiState<LoginResponse>> = _loginState
@@ -47,7 +53,23 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
             )
 
             if (result.isSuccess) {
-                fetchMyHomeId()
+                // Obtener el usuario actual para guardar userId y homeId
+                val userResult = repository.getMe()
+                if (userResult.isSuccess) {
+                    val user = userResult.getOrNull()!!
+                    val accessToken = result.getOrNull()?.access_token ?: ""
+                    val refreshToken = result.getOrNull()?.refresh_token ?: ""
+                    val userId = user.id
+                    val homeId = user.homeId ?: 0
+
+                    // Guardar sesión completa
+                    TokenManager.saveSession(context, accessToken, refreshToken, userId, homeId)
+                    RetrofitClient.setToken(accessToken)
+
+                    _homeIdState.value = UiState.Success(homeId)
+                } else {
+                    _homeIdState.value = UiState.Error("No se pudo obtener el usuario")
+                }
             }
         }
     }
@@ -66,7 +88,22 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                 )
 
                 if (loginResult.isSuccess) {
-                    fetchMyHomeId()
+                    // Obtener el usuario actual para guardar userId y homeId
+                    val userResult = repository.getMe()
+                    if (userResult.isSuccess) {
+                        val user = userResult.getOrNull()!!
+                        val accessToken = loginResult.getOrNull()?.access_token ?: ""
+                        val refreshToken = loginResult.getOrNull()?.refresh_token ?: ""
+                        val userId = user.id
+                        val homeId = user.homeId ?: 0
+
+                        TokenManager.saveSession(context, accessToken, refreshToken, userId, homeId)
+                        RetrofitClient.setToken(accessToken)
+
+                        _homeIdState.value = UiState.Success(homeId)
+                    } else {
+                        _homeIdState.value = UiState.Error("No se pudo obtener el usuario")
+                    }
                 }
             } else {
                 _registerAndLoginState.value = UiState.Error(
@@ -118,8 +155,6 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                         val createdRoom = result.getOrThrow()
                         createdRooms.add(createdRoom)
 
-                        // Guardar mapeo: roomLocalId (del frontend) -> roomBackendId
-                        // Asumiendo que rooms mantienen el mismo orden
                         println("DEBUG - Room creada con ID backend: ${createdRoom.id}")
                     } else {
                         _createRoomsState.value =
@@ -171,7 +206,6 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         }
     }
 
-    // Crear positions desde una lista (para el flujo de confirmación)
     fun createPositionsFromList(positions: List<PositionCreate>) {
         viewModelScope.launch {
             _createPositionsState.value = UiState.Loading
@@ -198,7 +232,6 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         }
     }
 
-    // Marcar positions como completas (cuando no hay ninguna)
     fun markPositionsAsComplete() {
         _createPositionsState.value = UiState.Success(true)
     }

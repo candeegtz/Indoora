@@ -1,16 +1,13 @@
 package com.indoora.app.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.indoora.app.data.repository.ActivityRepository
 import com.indoora.app.data.repository.AuthRepository
 import com.indoora.app.data.repository.HomeRepository
@@ -66,7 +63,7 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
     val homeRepository = HomeRepository()
 
     val authViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(authRepository)
+        factory = AuthViewModelFactory(authRepository, context)
     )
 
     val profileViewModel: ProfileViewModel = viewModel(
@@ -97,6 +94,11 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                 },
                 onNavigateToRegister = {
                     navController.navigate(Screen.Register.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                },
+                onNavigateToHome = { homeId ->
+                    navController.navigate(Screen.Home.createRoute(homeId)) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
