@@ -1,7 +1,9 @@
 package com.indoora.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -33,6 +35,7 @@ import com.indoora.app.feature.training.TrainingScreen
 import com.indoora.app.feature.training.TrainingViewModel
 import com.indoora.app.feature.training.TrainingViewModelFactory
 import com.indoora.app.network.mqtt.MqttManager
+import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String) {
     object Splash          : Screen("splash")
@@ -181,9 +184,20 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
             val activityRepository = ActivityRepository()
             val viewModel = ActivitiesViewModel(activityRepository, homeRepository, homeId)
+
+            val homeViewModel: HomeViewModel = viewModel(
+                factory = HomeViewModelFactory(homeRepository, mqttManager, context)
+            )
+
             ActivitiesScreen(
                 viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
+                homeId = homeId,  // ← Añadir este parámetro
+                onNavigateBack = { navController.popBackStack() },
+                onPublishConfigToMotor = { id ->
+                    viewModel.viewModelScope.launch {
+                        homeViewModel.publishHouseConfigToMotor(id)
+                    }
+                }
             )
         }
 
@@ -214,10 +228,20 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
             val routineRepository = RoutineRepository()
             val viewModel = RoutinesViewModel(routineRepository, homeId)
+
+            val homeViewModel: HomeViewModel = viewModel(
+                factory = HomeViewModelFactory(homeRepository, mqttManager, context)
+            )
+
             RoutinesScreen(
                 viewModel = viewModel,
                 homeId = homeId,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onPublishConfigToMotor = { id ->
+                    viewModel.viewModelScope.launch {
+                        homeViewModel.publishHouseConfigToMotor(id)
+                    }
+                }
             )
         }
     }

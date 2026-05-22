@@ -66,7 +66,7 @@ class HomeViewModel(
         }
     }
 
-    private suspend fun publishHouseConfigToMotor(homeId: Int) {
+    suspend fun publishHouseConfigToMotor(homeId: Int) {
         val result = homeRepository.getRoomsAndPositions(homeId)
         if (result.isSuccess) {
             val config = result.getOrNull() ?: emptyMap()

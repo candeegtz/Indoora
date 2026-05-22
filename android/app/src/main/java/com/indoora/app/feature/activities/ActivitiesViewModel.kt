@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 class ActivitiesViewModel(
     private val activityRepository: ActivityRepository,
     private val homeRepository: HomeRepository,
-    private val homeId: Int
+    val homeId: Int
 ) : ViewModel() {
 
     private val _activitiesState = MutableStateFlow<UiState<List<ActivityRead>>>(UiState.Idle)
