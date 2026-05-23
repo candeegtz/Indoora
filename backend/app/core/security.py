@@ -15,8 +15,8 @@ if not SECRET_KEY:
     raise ValueError("No se ha configurado la variable de entorno SECRET_KEY")
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 
-REFRESH_TOKEN_EXPIRE_DAYS_DEFAULT = 7 
+ACCESS_TOKEN_EXPIRE_MINUTES = 3        # 60 * 24 * 7 
+REFRESH_TOKEN_EXPIRE_DAYS_DEFAULT = 30 
 REFRESH_TOKEN_EXPIRE_DAYS_SUBJECT = 365
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

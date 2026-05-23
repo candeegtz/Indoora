@@ -10,3 +10,7 @@ data class LoginResponse(
     val refresh_token: String,
     val token_type: String
 )
+
+data class RefreshTokenRequest(
+    val refresh_token: String
+)

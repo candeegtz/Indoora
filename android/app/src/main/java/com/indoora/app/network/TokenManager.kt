@@ -38,6 +38,10 @@ object TokenManager {
         }
     }
 
+    suspend fun getRefreshToken(context: Context): String? {
+        return context.dataStore.data.first()[REFRESH_TOKEN_KEY]
+    }
+
     suspend fun clearTokens(context: Context) {
         context.dataStore.edit { it.clear() }
     }
