@@ -21,36 +21,41 @@ import kotlinx.coroutines.launch
 fun SplashScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToRegister: () -> Unit,
-    onNavigateToHome: (Int) -> Unit   // ← NUEVO: callback para ir directamente a Home
+    onNavigateToHome: (Int) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(true) }
+    var isChecking by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            val token = TokenManager.getAccessToken(context)
-            if (!token.isNullOrEmpty()) {
-                // Restaurar token en RetrofitClient
-                RetrofitClient.setToken(token)
-                try {
-                    // Verificar que el token es válido
-                    val response = RetrofitClient.api.getMe()
-                    if (response.isSuccessful && response.body() != null) {
-                        val homeId = response.body()!!.homeId ?: 0
-                        onNavigateToHome(homeId)
-                        return@launch
-                    } else {
+        // Verificar si hay un token válido
+        if (!isChecking) {
+            isChecking = true
+            coroutineScope.launch {
+                val token = TokenManager.getAccessToken(context)
+
+                if (!token.isNullOrEmpty()) {
+                    RetrofitClient.setToken(token)
+                    try {
+                        val response = RetrofitClient.api.getMe()
+                        if (response.isSuccessful && response.body() != null) {
+                            val homeId = response.body()!!.homeId ?: 0
+                            onNavigateToHome(homeId)
+                            return@launch
+                        } else {
+                            TokenManager.clearTokens(context)
+                            RetrofitClient.setToken(null)
+                        }
+                    } catch (e: Exception) {
                         TokenManager.clearTokens(context)
                         RetrofitClient.setToken(null)
                     }
-                } catch (e: Exception) {
-                    // Error de red, limpiar token
-                    TokenManager.clearTokens(context)
+                } else {
                     RetrofitClient.setToken(null)
                 }
+                isLoading = false
             }
-            isLoading = false
         }
     }
 

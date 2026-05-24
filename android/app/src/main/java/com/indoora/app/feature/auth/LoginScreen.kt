@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -26,6 +27,16 @@ fun LoginScreen(
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val loginState by viewModel.loginState.collectAsState()
+    val homeIdState by viewModel.homeIdState.collectAsState()
+
+    LaunchedEffect(homeIdState) {
+        if (homeIdState is UiState.Success) {
+            val homeId = (homeIdState as UiState.Success<Int>).data
+            // Pequeña pausa para asegurar que los tokens ya están guardados
+            kotlinx.coroutines.delay(100)
+            onLoginSuccess(homeId)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -41,9 +52,7 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = onNavigateBack
-            ) {
+            IconButton(onClick = onNavigateBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Volver",
@@ -148,14 +157,6 @@ fun LoginScreen(
                 color = Color(0xFFFFCDD2),
                 fontSize = 13.sp
             )
-            is UiState.Success -> {
-                val homeIdState by viewModel.homeIdState.collectAsState()
-                LaunchedEffect(homeIdState) {
-                    if (homeIdState is UiState.Success) {
-                        onLoginSuccess((homeIdState as UiState.Success<Int>).data)
-                    }
-                }
-            }
             else -> {}
         }
 

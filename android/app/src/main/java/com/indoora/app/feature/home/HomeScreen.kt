@@ -3,6 +3,7 @@ package com.indoora.app.feature.home
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,7 +29,8 @@ fun HomeScreen(
     onNavigateToSystemTraining: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToRoutines: () -> Unit = {},
-    onNavigateToActivities: () -> Unit = {}
+    onNavigateToActivities: () -> Unit = {},
+    onLogout: () -> Unit
 ) {
     val homeState by viewModel.homeState.collectAsState()
     val refreshTrigger by viewModel.refreshTrigger.collectAsState()
@@ -44,6 +46,12 @@ fun HomeScreen(
         viewModel.refreshAlerts() // Cargar alertas al iniciar
     }
 
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.clearSession()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -57,7 +65,16 @@ fun HomeScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent
-                )
+                ),
+                actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Cerrar sesión",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
             )
         },
         bottomBar = {
