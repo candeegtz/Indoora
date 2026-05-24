@@ -10,7 +10,6 @@ import com.indoora.app.data.model.LoginRequest
 import com.indoora.app.data.model.LoginResponse
 import com.indoora.app.data.model.PositionCreate
 import com.indoora.app.data.model.PositionRead
-import com.indoora.app.data.model.RefreshTokenRequest
 import com.indoora.app.data.model.RoomCreate
 import com.indoora.app.data.model.RoomRead
 import com.indoora.app.data.model.RoutineCreate
@@ -40,8 +39,6 @@ interface ApiService {
     @GET("auth/me")
     suspend fun getMe(): Response<UserRead>
 
-    @POST("auth/refresh")
-    suspend fun refreshToken(@Body request: RefreshTokenRequest): Response<LoginResponse>
     // Users
     @POST("users/")
     suspend fun createUser(@Body request: UserCreate): Response<UserRead>

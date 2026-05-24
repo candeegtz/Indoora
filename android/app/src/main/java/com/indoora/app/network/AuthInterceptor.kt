@@ -2,77 +2,92 @@ package com.indoora.app.network
 
 import android.content.Context
 import android.util.Log
-import com.indoora.app.data.model.RefreshTokenRequest
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
+import org.json.JSONObject
 
 class AuthInterceptor(private val context: Context) : Interceptor {
 
-    private val apiService: ApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:8000/")
-            .addConverterFactory(MoshiConverterFactory.create())
-            .build()
-            .create(ApiService::class.java)
-    }
+    private val client = OkHttpClient()
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val originalRequest = chain.request()
 
-        // Obtener el token actual (bloqueante con runBlocking)
+        // Obtener la petición original
+        val originalRequest = chain.request()
         val accessToken = runBlocking { TokenManager.getAccessToken(context) }
 
-        Log.d("AuthInterceptor", "Token actual: ${accessToken?.take(20)}...")
-
-        // Añadir token a la petición
+        // Se crea la petición con el token
         var request = originalRequest.newBuilder()
             .addHeader("Authorization", "Bearer $accessToken")
             .build()
 
+        // Se envía la petición controlada
         var response = chain.proceed(request)
 
-        Log.d("AuthInterceptor", "Código respuesta: ${response.code}")
-
-        // Si es 401 (no autorizado), intentar refresh
+        // Refresh de token
         if (response.code == 401) {
-            Log.d("AuthInterceptor", "Token expirado, intentando refresh...")
+
             synchronized(this) {
+
+                // Obtener el refresh token
                 val refreshToken = runBlocking { TokenManager.getRefreshToken(context) }
+
                 if (refreshToken != null) {
-                    // Llamar a refresh (suspend dentro de runBlocking)
-                    val newTokens = runBlocking {
-                        val refreshResponse = apiService.refreshToken(RefreshTokenRequest(refreshToken))
-                        if (refreshResponse.isSuccessful) {
-                            refreshResponse.body()
-                        } else {
-                            null
-                        }
-                    }
+                    try {
+                        // Petición de refresh
+                        val jsonBody = JSONObject().apply {
+                            put("refresh_token", refreshToken)
+                        }.toString()
 
-                    if (newTokens != null) {
-                        // Guardar nuevos tokens
-                        runBlocking {
-                            TokenManager.saveTokens(
-                                context,
-                                access = newTokens.access_token,
-                                refresh = newTokens.refresh_token
-                            )
-                        }
-                        // Actualizar token en RetrofitClient
-                        RetrofitClient.setToken(newTokens.access_token)
+                        val mediaType = "application/json".toMediaType()
 
-                        // Cerrar respuesta anterior y reintentar con nuevo token
-                        response.close()
-                        val newRequest = originalRequest.newBuilder()
-                            .addHeader("Authorization", "Bearer ${newTokens.access_token}")
+                        val refreshRequest = Request.Builder()
+                            .url("http://10.0.2.2:8000/auth/refresh")
+                            .post(jsonBody.toRequestBody(mediaType))
                             .build()
-                        return chain.proceed(newRequest)
+
+                        val refreshResponse = client.newCall(refreshRequest).execute()
+
+                        if (refreshResponse.isSuccessful) {
+                            val responseBody = refreshResponse.body?.string()
+                            if (responseBody != null) {
+                                // Actualizar tokens
+                                val json = JSONObject(responseBody)
+                                val newAccessToken = json.getString("access_token")
+                                val newRefreshToken = json.getString("refresh_token")
+
+                                runBlocking {
+                                    TokenManager.saveTokens(
+                                        context,
+                                        access = newAccessToken,
+                                        refresh = newRefreshToken
+                                    )
+                                }
+                                RetrofitClient.setToken(newAccessToken)
+
+                                response.close()
+
+                                // Volver a intentar la petición original
+                                val newRequest = originalRequest.newBuilder()
+                                    .addHeader("Authorization", "Bearer $newAccessToken")
+                                    .build()
+                                return chain.proceed(newRequest)
+                            }
+                        } else {
+                            Log.e("AuthInterceptor", "Refresh falló: ${refreshResponse.code}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("AuthInterceptor", "Excepción en refresh: ${e.message}")
                     }
+                } else {
+                    Log.e("AuthInterceptor", "Refresh token es NULL")
                 }
-                // Falló refresh: limpiar sesión
+
                 runBlocking { TokenManager.clearTokens(context) }
                 RetrofitClient.setToken(null)
             }

@@ -34,6 +34,8 @@ class HomeViewModel(
     private var isMotorActivated = false
     private var currentHomeId: Int = -1
 
+    private var isSessionActive = true
+
     fun loadHome(homeId: Int) {
         viewModelScope.launch {
             _homeState.value = UiState.Loading
@@ -44,6 +46,11 @@ class HomeViewModel(
                 UiState.Error(result.exceptionOrNull()?.message ?: "Error desconocido")
             }
         }
+    }
+
+    fun clearSession() {
+        _homeState.value = UiState.Idle
+        _unreadAlerts.value = emptyList()
     }
 
     fun refreshHome() {
