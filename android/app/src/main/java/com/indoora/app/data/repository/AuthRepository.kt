@@ -61,12 +61,21 @@ class AuthRepository(private val context: Context) {
             val response = api.login(LoginRequest(username, password))
             if (response.isSuccessful) {
                 response.body()?.let { loginResponse ->
-                    TokenManager.saveTokens(
-                        context,
-                        loginResponse.access_token,
-                        loginResponse.refresh_token
-                    )
-                    RetrofitClient.setToken(loginResponse.access_token)
+                    // Guardar tokens tras iniciar sesión
+                    val accessToken = loginResponse.access_token
+                    val refreshToken = loginResponse.refresh_token
+                    TokenManager.saveTokens(context, accessToken, refreshToken)
+                    RetrofitClient.setToken(accessToken)
+
+                    // Obtener el usuario para guardar userId y homeId
+                    val userResult = getMe()
+                    if (userResult.isSuccess) {
+                        val user = userResult.getOrNull()!!
+                        val userId = user.id
+                        val homeId = user.homeId ?: 0
+                        TokenManager.saveSession(context, accessToken, refreshToken, userId, homeId)
+                    }
+
                     Result.success(loginResponse)
                 } ?: Result.failure(Exception("Empty response"))
             } else {
@@ -139,9 +148,8 @@ class AuthRepository(private val context: Context) {
             } else {
                 Result.failure(Exception("Error ${response.code()}"))
             }
-    } catch (e: Exception) {
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }
-
 }

@@ -55,8 +55,15 @@ class AuthService:
         # Crear nuevo access token
         new_access = create_access_token({"sub": str(user.id)})
 
+        if user.user_type == UserType.SUBJECT:
+            refresh_days = REFRESH_TOKEN_EXPIRE_DAYS_SUBJECT
+        else:
+            refresh_days = REFRESH_TOKEN_EXPIRE_DAYS_DEFAULT
+        
+        new_refresh = create_refresh_token({"sub": str(user.id)}, days=refresh_days)
+
         return {
             "access_token": new_access,
+            "refresh_token": new_refresh,
             "token_type": "bearer"
         }
-
