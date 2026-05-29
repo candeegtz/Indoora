@@ -18,34 +18,23 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # Validar que DATABASE_URL existe
 if not DATABASE_URL:
     raise ValueError(
-        "❌ ERROR: DATABASE_URL no está configurado.\n"
-        "Por favor, crea un archivo .env en la carpeta backend con:\n"
-        "DATABASE_URL=postgresql://postgres:TU_CONTRASEÑA@localhost:5432/indoora"
+        "ERROR: DATABASE_URL no está configurado.\n"
     )
 
-# Validar que es PostgreSQL
-if not DATABASE_URL.startswith("postgresql"):
-    raise ValueError(
-        f"❌ ERROR: Se esperaba una URL de PostgreSQL.\n"
-        f"DATABASE_URL actual: {DATABASE_URL}\n"
-        f"Formato esperado: postgresql://usuario:contraseña@host:puerto/database"
-    )
 
-print(f"🐘 Conectando a PostgreSQL...")
-engine = create_engine(DATABASE_URL, echo=True)
+connect_args = {}
+if "supabase" in DATABASE_URL:
+    connect_args = {"sslmode": "require"}
+
+engine = create_engine(DATABASE_URL, echo=True, connect_args=connect_args)
 
 
 def create_db_and_tables():
-    """Crea todas las tablas y datos iniciales"""
-    print("📊 Creando tablas...")
+    """Crea todas las tablas """
+    print("Creando tablas...")
     SQLModel.metadata.create_all(engine)
-    
-    print("👤 Creando datos iniciales...")
-    with Session(engine) as session:
-        create_admin_user(session)
-        create_initial_data(session)
-    
-    print("✅ Base de datos inicializada correctamente")
+ 
+    print("Base de datos inicializada correctamente")
 
 
 def get_session():
