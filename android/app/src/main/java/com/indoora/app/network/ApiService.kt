@@ -62,7 +62,7 @@ interface ApiService {
     suspend fun createPosition(@Body request: PositionCreate): Response<PositionRead>
 
     // Activities
-    @POST("activities")
+    @POST("activities/")
     suspend fun createActivity(@Body request: ActivityCreate): Response<ActivityRead>
 
     @PUT("homes/{homeId}")
@@ -71,7 +71,7 @@ interface ApiService {
     @GET("routines/home/{home_id}")
     suspend fun getRoutinesByHomeId(@Path("home_id") homeId: Int): Response<List<RoutineRead>>
 
-    @POST("routines")
+    @POST("routines/")
     suspend fun createRoutine(@Body routine: RoutineCreate): Response<RoutineRead>
 
     @PUT("routines/{routine_id}")
