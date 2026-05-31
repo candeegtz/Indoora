@@ -81,6 +81,9 @@ class HomeService:
     # ------------Position------------
 
     def create_position(self, data: PositionCreate):
+
+        if not data.name or not data.name.strip():
+            raise HTTPException(400, "Position name cannot be empty")
         # ASociada a una room
         room = self.repo.get_room_by_id(data.room_id)
         if not room:
@@ -106,6 +109,9 @@ class HomeService:
     # ------------Activity------------
 
     def create_activity(self, data: ActivityCreate):
+        if not data.name or not data.name.strip():
+            raise HTTPException(400, "Activity name cannot be empty")
+        
         return self.repo.create_activity(data)
 
     def get_activity_by_id(self, activity_id: int):
@@ -116,6 +122,9 @@ class HomeService:
 
     def update_activity(self, activity_id: int, data: ActivityUpdate):
         updated = self.repo.update_activity(activity_id, data)
+
+        if not data.name or not data.name.strip():
+            raise HTTPException(400, "Activity name cannot be empty")
         
         if data.position_ids is not None:
             self.repo.update_activity_positions(activity_id, data.position_ids)
