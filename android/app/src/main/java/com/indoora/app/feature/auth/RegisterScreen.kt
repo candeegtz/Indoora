@@ -79,20 +79,30 @@ fun RegisterScreen(
     LaunchedEffect(createRoomsState) {
         if (createRoomsState is UiState.Success) {
             val createdRooms = (createRoomsState as UiState.Success).data
-            val roomMap      = createdRooms.associateBy { it.name }
+            val roomMap = createdRooms.associateBy { it.name }
             val allPositions = mutableListOf<PositionCreate>()
 
             positionsByRoom.forEach { (localRoom, positions) ->
                 val createdRoom = roomMap[localRoom.name]
                 if (createdRoom != null) {
-                    positions.forEach { position ->
-                        if (position.name.isNotBlank()) {
-                            allPositions.add(
-                                PositionCreate(
-                                    name = position.name,
-                                    roomId = createdRoom.id
-                                )
+                    // Si no hay posiciones, crear una por defecto con el mismo nombre
+                    if (positions.isEmpty()) {
+                        allPositions.add(
+                            PositionCreate(
+                                name = localRoom.name,
+                                roomId = createdRoom.id
                             )
+                        )
+                    } else {
+                        positions.forEach { position ->
+                            if (position.name.isNotBlank()) {
+                                allPositions.add(
+                                    PositionCreate(
+                                        name = position.name,
+                                        roomId = createdRoom.id
+                                    )
+                                )
+                            }
                         }
                     }
                 }
