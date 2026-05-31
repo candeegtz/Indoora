@@ -6,7 +6,7 @@
     "mqtt_password": "",
     "training_topic_prefix": "training",
     "mqtt_topic_receivers": "receivers/#",
-    "backend_url": "http://localhost:8000",
+    "backend_url": "https://indoora-h9kl7.ondigitalocean.app",
     "topic_stable": "motor/stable_position",
     "topic_config": "motor/config",
     "models_dir": "src/logs",
