@@ -22,9 +22,8 @@ class PositioningService:
         if not force_alert:
             return []
 
-        now = datetime.now()
-        current_time = now.time()
-        current_day = now.strftime("%A").upper()
+        current_time = timestamp.time()
+        current_day = timestamp.strftime("%A").upper()
         routines = self.positioning_repo.get_active_routines(home_id, current_time, current_day)
         alerts = []
 
@@ -50,13 +49,10 @@ class PositioningService:
             })
         return alerts
     
-    def _check_position_against_routines(self, home_id: int, room: str, position: str) -> tuple[bool, str | None, str | None]:
+    def _check_position_against_routines(self, home_id: int, room: str, position: str, current_time: datetime.time, current_day: str) -> tuple[bool, str | None, str | None]:
         
         '''Verifica si la posición actual coincide con las esperadas de las rutinas activas. Devuelve si es esperada y cuáles son las esperadas.'''
-        
-        now = datetime.now()
-        current_time = now.time()
-        current_day = now.strftime("%A").upper()
+
         routines = self.positioning_repo.get_active_routines(home_id, current_time, current_day)
         expected_room = None
         expected_pos = None
@@ -75,13 +71,16 @@ class PositioningService:
         
         '''Procesa la posición estable recibida del motor, evalúa contra rutinas y genera alertas si es necesario. Devuelve si la posición es esperada y detalles.'''
         
+        current_time = timestamp.time()
+        current_day = timestamp.strftime("%A").upper()
+
         # Validaciones (home, subject) usando repositorios
         home = self.home_repo.get_home_by_id(home_id)
         if not home:
             raise HTTPException(404, "Home not found")
 
         # Evaluar si la posición actual es esperada según rutinas activas
-        is_expected, expected_room, expected_pos = self._check_position_against_routines(home_id, room, position)
+        is_expected, expected_room, expected_pos = self._check_position_against_routines(home_id, room, position, current_time, current_day)
         
         # Si es desviación y no esperada, generar alertas (y enviar correos)
         if deviation_timer and not is_expected:
