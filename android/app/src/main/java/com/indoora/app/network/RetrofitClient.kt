@@ -11,8 +11,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
 
-    // Emulador: 10.0.2.2 = localhost de tu PC, cambiar cuando el backend esté desplegado
-    private const val BASE_URL = "http://10.0.2.2:8000/"
+    private const val BASE_URL = "https://indoora-h9kl7.ondigitalocean.app/"
 
     private var token: String? = null
 

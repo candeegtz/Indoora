@@ -19,15 +19,9 @@ class AuthInterceptor(private val context: Context) : Interceptor {
 
         // Obtener la petición original
         val originalRequest = chain.request()
-        val accessToken = runBlocking { TokenManager.getAccessToken(context) }
-
-        // Se crea la petición con el token
-        var request = originalRequest.newBuilder()
-            .addHeader("Authorization", "Bearer $accessToken")
-            .build()
 
         // Se envía la petición controlada
-        var response = chain.proceed(request)
+        var response = chain.proceed(originalRequest)
 
         // Refresh de token
         if (response.code == 401) {
@@ -47,7 +41,7 @@ class AuthInterceptor(private val context: Context) : Interceptor {
                         val mediaType = "application/json".toMediaType()
 
                         val refreshRequest = Request.Builder()
-                            .url("http://10.0.2.2:8000/auth/refresh")
+                            .url("https://indoora-h9kl7.ondigitalocean.app/auth/refresh")
                             .post(jsonBody.toRequestBody(mediaType))
                             .build()
 
