@@ -180,25 +180,36 @@ def send_to_backend(room, position):
                     expected_pos = data.get("expected_position")
                     current_incorrect = (room, position)
 
-                    if deviation_start_time is None:
-                        # Inicio de nueva desviación
-                        deviation_start_time = datetime.now()
-                        last_incorrect_position = current_incorrect
-                        print(f"Inicio de desviación. Se esperaba {expected_room} - {expected_pos}")
-                        if deviation_timer:
-                            deviation_timer.cancel()
-                        deviation_timer = threading.Timer(DEVIATION_TIMEOUT_SECONDS, send_deviation_alert, args=(room, position))
-                        deviation_timer.start()
-                    elif last_incorrect_position != current_incorrect:
-                        # Cambio a otra posición incorrecta → reiniciar temporizador
-                        print(f"Posición incorrecta cambió de {last_incorrect_position} a {current_incorrect}. Reiniciando temporizador.")
-                        deviation_start_time = datetime.now()
-                        last_incorrect_position = current_incorrect
-                        if deviation_timer:
-                            deviation_timer.cancel()
-                        deviation_timer = threading.Timer(DEVIATION_TIMEOUT_SECONDS, send_deviation_alert, args=(room, position))
-                        deviation_timer.start()
-                    # Si es la misma posición incorrecta, no hacemos nada (el temporizador sigue corriendo)
+                    # Si no hay rutina activa (expected_room es None), no iniciar temporizador
+                    if expected_room is None or expected_pos is None:
+                        print(f"Posición '{room} - {position}' no esperada, pero no hay rutina activa. Temporizador no iniciado.")
+                        # También resetear cualquier temporizador pendiente
+                        if deviation_start_time is not None:
+                            if deviation_timer:
+                                deviation_timer.cancel()
+                                deviation_timer = None
+                            deviation_start_time = None
+                            last_incorrect_position = None
+                    else:
+                        if deviation_start_time is None:
+                            # Inicio de nueva desviación
+                            deviation_start_time = datetime.now()
+                            last_incorrect_position = current_incorrect
+                            print(f"Inicio de desviación. Se esperaba {expected_room} - {expected_pos}")
+                            if deviation_timer:
+                                deviation_timer.cancel()
+                            deviation_timer = threading.Timer(DEVIATION_TIMEOUT_SECONDS, send_deviation_alert, args=(room, position))
+                            deviation_timer.start()
+                        elif last_incorrect_position != current_incorrect:
+                            # Cambio a otra posición incorrecta → reiniciar temporizador
+                            print(f"Posición incorrecta cambió de {last_incorrect_position} a {current_incorrect}. Reiniciando temporizador.")
+                            deviation_start_time = datetime.now()
+                            last_incorrect_position = current_incorrect
+                            if deviation_timer:
+                                deviation_timer.cancel()
+                            deviation_timer = threading.Timer(DEVIATION_TIMEOUT_SECONDS, send_deviation_alert, args=(room, position))
+                            deviation_timer.start()
+                        # Si es la misma posición incorrecta, el temporizador sigue corriendo
 
             print(f"Enviado a backend: {room} - {position}")
         else:
