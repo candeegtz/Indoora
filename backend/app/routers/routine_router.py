@@ -7,7 +7,7 @@ from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/routines", tags=["Routines"])
 
-@router.post("", response_model=RoutineRead)   # ← sin barra al final para evitar redirección 307
+@router.post("/", response_model=RoutineRead)   
 def create_routine(
     data: RoutineCreate,
     session: Session = Depends(get_session),
