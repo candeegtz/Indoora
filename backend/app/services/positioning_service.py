@@ -18,7 +18,7 @@ class PositioningService:
         '''Evalúa las rutinas activas para la casa y genera alertas si la posición actual no coincide con las esperadas.'''
         
         # force_alert = false -> No genera alerta porque lo indica el motor
-        #                       - Caso: temporizados de desviación no ha llegado a 0
+        #                       - Caso: temporizador de desviación no ha llegado a 0
         if not force_alert:
             return []
 
@@ -69,7 +69,8 @@ class PositioningService:
 
     def process_stable_position(self, home_id: int, room: str, position: str, timestamp: datetime, deviation_timer: bool) -> dict:
         
-        '''Procesa la posición estable recibida del motor, evalúa contra rutinas y genera alertas si es necesario. Devuelve si la posición es esperada y detalles.'''
+        '''Procesa la posición estable recibida del motor, evalúa contra rutinas y 
+        genera alertas si es necesario. Devuelve si la posición es esperada y detalles.'''
         
         current_time = timestamp.time()
         current_day = timestamp.strftime("%A").upper()

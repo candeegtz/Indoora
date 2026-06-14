@@ -141,7 +141,7 @@ class HomeRepository:
     # ------------Activity------------
 
     def create_activity(self, data: ActivityCreate) -> Activity:
-        activity = Activity(name=data.name, home_id=data.home_id)  # home_id también debería guardarse
+        activity = Activity(name=data.name, home_id=data.home_id)  
         self.session.add(activity)
         self.session.flush()   # para obtener activity.id
         # Asociar posiciones
