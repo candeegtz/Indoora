@@ -21,6 +21,7 @@ import com.indoora.app.ui.theme.indooraBackground
 fun TrainingScreen(
     homeId: Int,
     onNavigateBack: () -> Unit,
+    onPublishConfigToMotor: (Int) -> Unit = {},
     viewModel: TrainingViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -29,6 +30,9 @@ fun TrainingScreen(
     val progressTotal by viewModel.progressTotal.collectAsState()
     val navigateToHome by viewModel.navigateToHome.collectAsState()
     var showExitDialog by remember { mutableStateOf(false) }
+    var showConfirmEngineDialog by remember { mutableStateOf(false) }
+    var showStartTrainingDialog by remember { mutableStateOf(false) } // NUEVO: Estado para el popup de inicio
+
     val isStepConfirmed by viewModel.isStepConfirmed.collectAsState()
 
     // Cargar secuencia al entrar
@@ -93,10 +97,10 @@ fun TrainingScreen(
                                 Text("• ${step.room} - ${step.position}", fontSize = 14.sp)
                             }
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Antes de comenzar el entrenamiento, ejecuta el archivo 'runner.bat' en el ordenador local")
+                            Text("Antes de comenzar el entrenamiento, ejecuta el 'Guardado de datos' en el panel del ordenador local.")
                             Spacer(modifier = Modifier.height(20.dp))
                             Button(
-                                onClick = { viewModel.startTraining() },
+                                onClick = { showStartTrainingDialog = true }, // Modificado para abrir el popup en lugar de iniciar directamente
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
@@ -179,11 +183,8 @@ fun TrainingScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             Text("Entrenando el modelo...", fontSize = 18.sp, fontWeight = FontWeight.Medium)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Este proceso puede tardar unos segundos.\nPuedes volver al inicio mientras tanto.", fontSize = 14.sp)
+                            Text("Este proceso puede tardar unos segundos.", fontSize = 14.sp)
                             Spacer(modifier = Modifier.height(24.dp))
-                            Button(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
-                                Text("Volver al inicio")
-                            }
                         }
                     }
                 }
@@ -198,10 +199,15 @@ fun TrainingScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             Text("El sistema ya está completamente configurado.", fontSize = 16.sp)
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text("Ejecuta el archivo 'iniciar_motor.bat' para que el sistema pueda detectar actividades.", fontSize = 16.sp)
+                            Text("Ejecuta 'Iniciar Predicción' en el Panel HTA del ordenador antes de continuar.", fontSize = 16.sp)
                             Spacer(modifier = Modifier.height(24.dp))
-                            Button(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
-                                Text("Ir al inicio")
+
+                            Button(
+                                onClick = { showConfirmEngineDialog = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Finalizar y Sincronizar")
                             }
                         }
                     }
@@ -214,7 +220,7 @@ fun TrainingScreen(
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
             title = { Text("¿Salir del entrenamiento?") },
-            text = { Text("Si sales ahora, el progreso se perderá y tendrás que empezar de nuevo.") },
+            text = { Text("Si sales ahora, el progreso se perderá y tendrás que empezar de nuevo.\n\nEn el caso de cancelar, pulsar el botón 'Cancelar guardado' de la app del motor") },
             confirmButton = {
                 TextButton(onClick = { viewModel.cancelTraining(); onNavigateBack() }) {
                     Text("Salir", color = MaterialTheme.colorScheme.error)
@@ -223,6 +229,61 @@ fun TrainingScreen(
             dismissButton = {
                 TextButton(onClick = { showExitDialog = false }) {
                     Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showStartTrainingDialog) {
+        AlertDialog(
+            onDismissRequest = { /* No hacer nada al pulsar fuera, obligar a elegir */ },
+            title = { Text("¿Motor de guardado encendido?") },
+            text = { Text("Para comenzar la captura, asegúrate de que el motor está escuchando.\n\n¿Has ejecutado ya el 'Guardado de datos' en el ordenador?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showStartTrainingDialog = false
+                        viewModel.startTraining()
+                    }
+                ) {
+                    Text("Sí, ya está escuchando")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showStartTrainingDialog = false
+                    }
+                ) {
+                    Text("No, voy a hacerlo", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        )
+    }
+
+    if (showConfirmEngineDialog) {
+        AlertDialog(
+            onDismissRequest = { /* No hacer nada al pulsar fuera, obligar a elegir */ },
+            title = { Text("¿Motor predictor encendido?") },
+            text = { Text("Para poder sincronizar la casa, es obligatorio que el motor ya esté encendido.\n\n¿Has pulsado ya 'Iniciar Predicción' en el ordenador?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showConfirmEngineDialog = false
+                        onPublishConfigToMotor(homeId)
+                        onNavigateBack()
+                    }
+                ) {
+                    Text("Sí, ya está iniciado")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmEngineDialog = false
+                    }
+                ) {
+                    Text("No, voy a hacerlo", color = MaterialTheme.colorScheme.error)
                 }
             }
         )
