@@ -31,6 +31,7 @@ fun AddRoomsStep(
 ) {
     var editingRoom by remember { mutableStateOf<RoomData?>(null) }
     val isLoading = createRoomsState is com.indoora.app.feature.auth.UiState.Loading
+    val errorMessage = (createRoomsState as? com.indoora.app.feature.auth.UiState.Error)?.message
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -129,6 +130,16 @@ fun AddRoomsStep(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Añadir habitación", fontSize = 15.sp)
                         }
+                    }
+
+                    if (errorMessage != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = errorMessage,
+                            color = Color(0xFFFFCDD2),
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }

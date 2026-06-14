@@ -26,7 +26,8 @@ fun AddPositionsStep(
     rooms: List<RoomData>,
     positionsByRoom: MutableMap<RoomData, MutableList<PositionData>>,
     onContinue: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    errorMessage: String? = null
 ) {
     var expandedRoomId by remember { mutableStateOf<String?>(null) }
 
@@ -70,7 +71,6 @@ fun AddPositionsStep(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Lista de habitaciones con desplegables
                     rooms.forEach { room ->
                         val isExpanded = expandedRoomId == room.id
                         val positions = positionsByRoom[room] ?: mutableListOf()
@@ -92,12 +92,21 @@ fun AddPositionsStep(
 
                         Spacer(modifier = Modifier.height(8.dp))
                     }
+
+                    if (errorMessage != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = errorMessage,
+                            color = Color(0xFFFFCDD2),
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Botones atrás y continuar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -137,7 +146,7 @@ fun AddPositionsStep(
 @Composable
 private fun LocalRoomWithPositions(
     room: RoomData,
-    positions: MutableList<PositionData>,  // ✅ Mantener MutableList
+    positions: MutableList<PositionData>,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
     onAddPosition: () -> Unit,

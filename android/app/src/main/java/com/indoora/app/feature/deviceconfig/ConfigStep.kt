@@ -12,27 +12,31 @@ object DeviceConfigSteps {
     val steps = listOf(
         ConfigStep(
             stepNumber = 1,
-            title = "'Mosquitto' en funcionamiento",
-            description = "Entrar en docker desktop y encender el contenedor de la imagen 'mosquitto'.",
+            title = "Puesta en marcha del servidor",
+            description = "El técnico se encargará de inicializar el centro de comunicaciones del hogar. Esto permite que el sistema funcione de forma privada y segura.",
+            details = listOf(
+                "Activación de la red interna del sistema",
+                "Preparación del entorno para recibir datos en tiempo real"
+            )
         ),
         ConfigStep(
             stepNumber = 2,
-            title = "Configura los dispositivos ESP32",
-            description = "Accede a 'Arduino IDE' y compila el código correspondiente para cada dispositivo. Pero antes, ten en cuenta:",
+            title = "Instalación de sensores y pulsera",
+            description = "El instalador colocará los sensores en puntos clave de la casa y los sincronizará con la pulsera inteligente del usuario monitorizado.",
             details = listOf(
-                "Debes de modificar la dirección MAC de la pulsera BLE",
-                "Indica el nombre y la contraseña del wifi del hogar",
-                "Adapta el nombre y ruta '/receivers' para cada dispositivo"
+                "Conexión de los equipos a la red Wi-Fi del hogar",
+                "Vinculación segura y única de la pulsera de actividad",
+                "Comprobación de cobertura en las habitaciones"
             )
         ),
         ConfigStep(
             stepNumber = 3,
-            title = "¡Configuración de dispositivos completada!",
-            description = "Todo listo para seguir con el entrenamiento del sistema",
+            title = "¡Instalación técnica completada!",
+            description = "Una vez que el técnico te indique que ha terminado la instalación física, confirma este paso para comenzar a enseñarle tu hogar al sistema.",
             details = listOf(
-                "Dispositivos configurados y conectados",
-                "Servidor MQTT funcionando",
-                "Ahora puedes entrenar el sistema"
+                "Sensores instalados y sincronizados",
+                "Red de comunicaciones operativa",
+                "Sistema desbloqueado y listo para iniciar el entrenamiento"
             )
         )
     )

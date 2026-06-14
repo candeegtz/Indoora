@@ -209,7 +209,7 @@ fun RegisterScreen(
                         positionsByRoom.remove(room)
                         rooms.remove(room)
                     },
-                    createRoomsState = UiState.Idle,
+                    createRoomsState = createRoomsState,
                     onContinue = {
                         rooms.forEach { room ->
                             if (!positionsByRoom.containsKey(room)) {
@@ -221,16 +221,22 @@ fun RegisterScreen(
                     onBack = {}
                 )
 
-                RegisterStep.ADD_POSITIONS -> AddPositionsStep(
-                    rooms = rooms,
-                    positionsByRoom = positionsByRoom,
-                    onContinue = { step = RegisterStep.CONFIRM_SETUP },
-                    onBack = { step = RegisterStep.ADD_ROOMS }
-                )
+                RegisterStep.ADD_POSITIONS -> {
+                    val error = (createPositionsState as? UiState.Error)?.message
+                    AddPositionsStep(
+                        rooms = rooms,
+                        positionsByRoom = positionsByRoom,
+                        onContinue = { step = RegisterStep.CONFIRM_SETUP },
+                        onBack = { step = RegisterStep.ADD_ROOMS },
+                        errorMessage = error
+                    )
+                }
 
                 RegisterStep.CONFIRM_SETUP -> {
                     val isLoading = createRoomsState is UiState.Loading ||
                             createPositionsState is UiState.Loading
+                    val roomsError = (createRoomsState as? UiState.Error)?.message
+                    val positionsError = (createPositionsState as? UiState.Error)?.message
 
                     ConfirmSetupStep(
                         homeName = formData.homeName,
@@ -240,7 +246,9 @@ fun RegisterScreen(
                         onConfirm = {
                             viewModel.createRooms(rooms.map { it.toRoomCreate() })
                         },
-                        onBack = { step = RegisterStep.ADD_POSITIONS }
+                        onBack = { step = RegisterStep.ADD_POSITIONS },
+                        roomsError = roomsError,
+                        positionsError = positionsError
                     )
                 }
             }

@@ -289,13 +289,7 @@ private fun BottomNavigationBar(
         containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onBackground
     ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-            label = { Text("Inicio") },
-            selected = currentScreen == "home",
-            onClick = onNavigateToHome,
-            colors = navBarItemColors()
-        )
+
         NavigationBarItem(
             icon = { Icon(Icons.Default.List, contentDescription = "Rutinas") },
             label = { Text("Rutinas") },
@@ -303,13 +297,7 @@ private fun BottomNavigationBar(
             onClick = onNavigateToRoutines,
             colors = navBarItemColors()
         )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.AccountCircle, contentDescription = "Perfil") },
-            label = { Text("Perfil") },
-            selected = currentScreen == "profile",
-            onClick = onNavigateToProfile,
-            colors = navBarItemColors()
-        )
+
         NavigationBarItem(
             icon = { Icon(Icons.Default.Add, contentDescription = "Actividades") },
             label = { Text("Actividades") },
@@ -317,6 +305,23 @@ private fun BottomNavigationBar(
             onClick = onNavigateToActivities,
             colors = navBarItemColors()
         )
+
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
+            label = { Text("Inicio") },
+            selected = currentScreen == "home",
+            onClick = onNavigateToHome,
+            colors = navBarItemColors()
+        )
+
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.AccountCircle, contentDescription = "Perfil") },
+            label = { Text("Perfil") },
+            selected = currentScreen == "profile",
+            onClick = onNavigateToProfile,
+            colors = navBarItemColors()
+        )
+
     }
 }
 
