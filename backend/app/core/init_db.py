@@ -1,7 +1,6 @@
-# app/core/init_db.py
-from sqlmodel import Session, select
-from app.models.models import Home, User, UserType
-from app.core.security import hash_password
+'''
+
+# Funciones empleadas inicialmente para crear un usuario admin y datos de prueba. No se usan en producción.
 
 def create_admin_user(session: Session):
     existing = session.exec(
@@ -66,3 +65,5 @@ def create_initial_data(session: Session):
     session.commit()
 
     print("Initial data created")
+
+'''

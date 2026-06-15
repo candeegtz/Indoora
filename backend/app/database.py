@@ -2,12 +2,6 @@ import os
 from dotenv import load_dotenv
 from sqlmodel import SQLModel, Session, create_engine
 
-from app.core.init_db import create_admin_user, create_initial_data
-from app.models.models import (
-    Home, User, Room, Routine,
-    Activity, Position, EmisorDevice,
-    ReceptorDevice, ActivityPosition
-)
 
 # Cargar variables de entorno
 load_dotenv()
