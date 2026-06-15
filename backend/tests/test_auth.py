@@ -150,8 +150,8 @@ def test_me_authenticated(client):
             "surnames": "Grande",
             "email": "me@gmail.com",
             "password": "123456",
-            "user_type": "SUPERVISOR_CREATOR",
-            "home_name": "Test Home"
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "Test Home"
         }
     )
 
@@ -168,7 +168,7 @@ def test_me_authenticated(client):
     )
 
     assert response.status_code == 200
-    assert response.json()["email"] == "me@gmail.com"
+    assert response.json()["username"] == "supervisor1"
 
 
 def test_me_unauthenticated(client):

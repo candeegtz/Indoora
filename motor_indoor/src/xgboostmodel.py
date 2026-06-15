@@ -99,14 +99,25 @@ try:
     broker = cfg.get("mqtt_broker", "localhost")
     port = cfg.get("mqtt_port", 1883)
     prefix = cfg.get("training_topic_prefix", "training")
+    mqtt_user = cfg.get("mqtt_user", "")
+    mqtt_password = cfg.get("mqtt_password", "")
+    
     client = mqtt.Client()
+    
+    # ¡AÑADIDO! Autenticación vital para que Mosquitto acepte el mensaje
+    if mqtt_user:
+        client.username_pw_set(mqtt_user, mqtt_password)
+        
     client.connect(broker, port, 60)
     client.loop_start()
+    
     # Publicar mensaje de modelo listo
-    client.publish(f"{prefix}/model_ready", json.dumps({"type": "model_ready"}))
-    time.sleep(0.5)
+    mensaje_info = client.publish(f"{prefix}/model_ready", json.dumps({"type": "model_ready"}), qos=1)
+    mensaje_info.wait_for_publish() # Esto bloquea hasta que Mosquitto confirma la recepción
+    
+    time.sleep(1) # Un segundo extra de gracia
     client.loop_stop()
     client.disconnect()
-    print("Notificación MQTT enviada a la app")
+    print("Notificación MQTT enviada a la app exitosamente")
 except Exception as e:
     print(f"No se pudo enviar notificación MQTT: {e}")

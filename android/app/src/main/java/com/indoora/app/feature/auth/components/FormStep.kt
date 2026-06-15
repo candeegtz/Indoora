@@ -18,6 +18,7 @@ fun FormStep(
     onNext: () -> Unit
 ) {
     val isFormValid = formData.isBasicFormValid()
+    val errorMessage = (registerState as? UiState.Error)?.message
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Card(
@@ -66,12 +67,18 @@ fun FormStep(
                     placeholder = "mínimo 6 caracteres",
                     isPassword = true
                 )
-
-                ErrorMessage(
-                    registerState = registerState,
-                    keywords = listOf("username", "email", "password", "already", "400")
-                )
             }
+        }
+
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = errorMessage,
+                color = Color(0xFFFFCDD2),
+                fontSize = 13.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))

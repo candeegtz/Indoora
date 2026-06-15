@@ -20,6 +20,7 @@ fun CreateSubjectStep(
 ) {
     val isLoading = createSubjectState is UiState.Loading
     val isFormValid = subjectFormData.isValid()
+    val errorMessage = (createSubjectState as? UiState.Error)?.message
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -94,12 +95,18 @@ fun CreateSubjectStep(
                     enabled = !isLoading,
                     isPassword = true
                 )
-
-                ErrorMessage(
-                    registerState = createSubjectState,
-                    keywords = listOf("username", "email", "already", "400")
-                )
             }
+        }
+
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = errorMessage,
+                color = Color(0xFFFFCDD2),
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -131,6 +138,5 @@ fun CreateSubjectStep(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
     }
 }

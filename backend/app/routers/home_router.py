@@ -134,7 +134,7 @@ def create_position(
     current_user = Depends(get_current_user)
 ):
     repo = HomeService(session)
-    return repo.create_position(data)
+    return repo.create_position(data, current_user)
 
 
 @router.get("/positions/{position_id}", response_model=PositionRead)

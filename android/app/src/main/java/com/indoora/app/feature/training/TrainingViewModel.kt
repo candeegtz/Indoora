@@ -53,6 +53,7 @@ class TrainingViewModel(
     private val _progressTotal = MutableStateFlow(0)
     val progressTotal: StateFlow<Int> = _progressTotal
 
+    // Mantenemos la variable por compatibilidad con la vista (para cancelaciones o salida manual)
     private val _navigateToHome = MutableStateFlow(false)
     val navigateToHome: StateFlow<Boolean> = _navigateToHome
 
@@ -63,13 +64,14 @@ class TrainingViewModel(
     private var totalSteps = 0
     private var sequenceBackup: List<TrainingStep> = emptyList()
 
+    private var isModelAlreadyReady = false
+
     fun onMqttConnected() {
         isMqttReady = true
-        // Suscribirse a topics de entrenamiento
         mqttManager.subscribe("training/instruction")
         mqttManager.subscribe("training/progress")
         mqttManager.subscribe("training/complete")
-        mqttManager.subscribe("training/model_ready")   // Nuevo
+        mqttManager.subscribe("training/model_ready")
 
         viewModelScope.launch {
             mqttManager.messages.collect { message ->
@@ -140,11 +142,11 @@ class TrainingViewModel(
 
         mqttManager.publish("training/start", startMessage)
 
-        // Reiniciar variables de progreso
         currentStepIndex = 0
         _instruction.value = ""
         _progressReadings.value = 0
         _progressTotal.value = 0
+        isModelAlreadyReady = false // Resetear la bandera
 
         _uiState.value = TrainingUiState.Training
     }
@@ -155,6 +157,7 @@ class TrainingViewModel(
         mqttManager.publish("training/confirm", "{\"type\":\"confirm\"}")
         _isStepConfirmed.value = true
     }
+
     fun cancelTraining() {
         mqttManager.publish("training/cancel", "{\"type\":\"cancel\"}")
         resetToReady()
@@ -201,16 +204,18 @@ class TrainingViewModel(
         _uiState.value = TrainingUiState.TrainingComplete
         viewModelScope.launch {
             delay(1500)
-            _uiState.value = TrainingUiState.ModelTraining
+            if (!isModelAlreadyReady) {
+                _uiState.value = TrainingUiState.ModelTraining
+            }
         }
     }
 
     private fun handleModelReady() {
+        isModelAlreadyReady = true
         _uiState.value = TrainingUiState.ModelReady
+
         viewModelScope.launch {
             updateHomeToCompleted()
-            delay(1000)
-            _navigateToHome.value = true
         }
     }
 
@@ -230,5 +235,6 @@ class TrainingViewModel(
         _progressTotal.value = 0
         currentStepIndex = 0
         _isStepConfirmed.value = false
+        isModelAlreadyReady = false
     }
 }

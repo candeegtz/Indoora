@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Panel de Control - Indoora</title>
+    
+    <HTA:APPLICATION 
+        APPLICATIONNAME="PanelMotor" 
+        WINDOWSTATE="maximize" 
+        SCROLL="no" 
+        SINGLEINSTANCE="yes" 
+        BORDER="none" 
+        CAPTION="no"
+        SYSMENU="no"
+    >
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #eef2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .panel {
+            background-color: white;
+            padding: 50px 60px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            text-align: center;
+            width: 450px;
+        }
+        h1 {
+            margin-top: 0;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        p.subtitle {
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.2s;
+        }
+        button:active {
+            transform: scale(0.97);
+        }
+        button:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-save { background-color: #27ae60; }
+        .btn-cancel-save { background-color: #f39c12; }
+        .btn-predict { background-color: #2980b9; }
+        .btn-stop { background-color: #e74c3c; }
+        .btn-exit { background-color: #7f8c8d; margin-top: 50px; }
+    </style>
+
+    <script language="Javascript">
+        function ejecutarBat(archivo) {
+            try {
+                var shell = new ActiveXObject("WScript.Shell");
+                
+                var url = unescape(document.URL);
+                var rutaHTA = url.replace(/^file:\/{2,3}/i, "").replace(/\//g, "\\");
+                var directorioBase = rutaHTA.substring(0, rutaHTA.lastIndexOf("\\"));
+                
+                var directorioIniciadores = directorioBase + "\\src\\Iniciadores";
+                shell.CurrentDirectory = directorioIniciadores;
+                
+                var comando = "cmd.exe /c \"" + archivo + "\"";
+                shell.Run(comando, 1, false);
+                
+            } catch (e) {
+                alert("Error al ejecutar: " + e.message);
+            }
+        }
+
+        function detenerProcesos() {
+            try {
+                var shell = new ActiveXObject("WScript.Shell");
+                shell.Run("taskkill /F /IM python.exe /T", 0, true);
+                shell.Run("taskkill /F /IM cmd.exe /T", 0, true);
+                alert("Todos los procesos del motor han sido detenidos (Ctrl + C simulado).");
+            } catch (e) {
+                alert("Error al intentar detener los procesos: " + e.message);
+            }
+        }
+
+        function cerrarPanel() {
+            window.close();
+        }
+    </script>
+</head>
+<body>
+
+    <div class="panel">
+        <h1>Motor Indoora</h1>
+        <p class="subtitle">Panel de control de infraestructura local</p>
+        
+        <button class="btn-save" onclick="ejecutarBat('runner.bat')">1. Guardado de datos</button>
+        <button class="btn-cancel-save" onclick="ejecutarBat('cancelarEntrenamiento.bat')">2. Cancelar guardado</button>
+        <button class="btn-predict" onclick="ejecutarBat('iniciar_motor.bat')">3. Iniciar predicción</button>
+        
+        <button class="btn-stop" onclick="detenerProcesos()">4. Detener procesos (Ctrl + C)</button>
+        <button class="btn-exit" onclick="cerrarPanel()">5. Salir del panel</button>
+    </div>
+
+</body>
+</html>

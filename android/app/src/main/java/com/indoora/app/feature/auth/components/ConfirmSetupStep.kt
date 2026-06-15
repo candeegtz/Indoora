@@ -27,11 +27,12 @@ fun ConfirmSetupStep(
     positionsByRoom: Map<RoomData, List<PositionData>>,
     isLoading: Boolean,
     onConfirm: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    roomsError: String? = null,        // ← error al crear habitaciones
+    positionsError: String? = null     // ← error al crear posiciones
 ) {
     var expandedRoomId by remember { mutableStateOf<String?>(null) }
 
-    // Sin Box(fillMaxSize) ni verticalScroll — el scroll lo gestiona RegisterScreen
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -105,6 +106,32 @@ fun ConfirmSetupStep(
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+
+                if (roomsError != null || positionsError != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (roomsError != null) {
+                            Text(
+                                text = roomsError,
+                                color = Color(0xFFFFCDD2),
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        if (positionsError != null) {
+                            if (roomsError != null) Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = positionsError,
+                                color = Color(0xFFFFCDD2),
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }

@@ -209,29 +209,3 @@ fun RegisterField(
         )
     }
 }
-
-@Composable
-fun ErrorMessage(registerState: UiState<*>, keywords: List<String>) {
-    if (registerState is UiState.Error) {
-        val errorMessage = (registerState as UiState.Error).message
-        if (keywords.any { errorMessage.contains(it, ignoreCase = true) }) {
-            Text(
-                text = when {
-                    errorMessage.contains("Subject not found", ignoreCase = true) ->
-                        "No se encontró el sujeto indicado"
-                    errorMessage.contains("already", ignoreCase = true) ->
-                        "El usuario o email ya existe"
-                    errorMessage.contains("connect", ignoreCase = true) ->
-                        "No se puede conectar al servidor"
-                    errorMessage.contains("404") -> "No se encontró el sujeto"
-                    errorMessage.contains("400") -> "Datos incorrectos. Verifica la información."
-                    else -> "Error: $errorMessage"
-                },
-                color = Color(0xFFFFCDD2),
-                fontSize = 13.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-}

@@ -1,5 +1,5 @@
 import pytest
-from app.models.models import RoomType, EstadoConfig
+from app.models.models import EstadoConfig
 
 
 @pytest.fixture
@@ -468,3 +468,46 @@ def test_delete_position(client, auth_header, create_subject):
 
     assert response.status_code == 200
     assert "deleted successfully" in response.json()["message"]
+
+
+def test_create_position_forbidden_wrong_home(client, auth_header, create_subject):
+    client.post(
+        "/auth/register-supervisor",
+        json={
+            "username": "intruder_pos",
+            "name": "Intruder",
+            "surnames": "Pos",
+            "email": "intruder_pos@gmail.com",
+            "password": "123456",
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "Intruder Home"
+        }
+    )
+    token2 = client.post(
+        "/auth/login",
+        json={"username": "intruder_pos", "password": "123456"}
+    ).json()["access_token"]
+    headers2 = {"Authorization": f"Bearer {token2}"}
+
+    home_id = create_subject["homeId"]
+    
+    room = client.post(
+        "/homes/rooms",
+        json={
+            "name": "Kitchen",
+            "roomType": "KITCHEN",
+            "homeId": home_id
+        },
+        headers=auth_header
+    ).json()
+
+    response = client.post(
+        "/homes/positions",
+        json={
+            "name": "Hack Position",
+            "roomId": room["id"]
+        },
+        headers=headers2
+    )
+
+    assert response.status_code == 403

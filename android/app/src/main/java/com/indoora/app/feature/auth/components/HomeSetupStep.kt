@@ -20,6 +20,8 @@ fun HomeSetupStep(
     onSubmit: () -> Unit
 ) {
     val isLoading = registerState is UiState.Loading
+    val errorMessage = (registerState as? UiState.Error)?.message
+
     val isFormValid = if (isSupervisorCreator) {
         formData.homeName.isNotBlank()
     } else {
@@ -77,10 +79,14 @@ fun HomeSetupStep(
                     )
                 }
 
-                ErrorMessage(
-                    registerState = registerState,
-                    keywords = listOf("subject", "404", "400", "connect")
-                )
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage,
+                        color = Color(0xFFFFCDD2),
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
         }
 

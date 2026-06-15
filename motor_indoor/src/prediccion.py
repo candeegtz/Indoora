@@ -30,7 +30,7 @@ TOPIC_CONFIG = cfg.get("topic_config", "motor/config")
 BACKEND_URL = cfg.get("backend_url", "http://localhost:8000")
 STABLE_ENDPOINT = f"{BACKEND_URL}/positioning/stable"
 
-API_KEY = os.getenv("MOTOR_API_KEY")  # No uses cfg.get("api_key", "")
+API_KEY = os.getenv("MOTOR_API_KEY")  
 if not API_KEY:
     print("ERROR: MOTOR_API_KEY no definida en el entorno. Saliendo.")
     exit(1)
@@ -72,7 +72,7 @@ timeout_thread = None
 position_window = deque(maxlen=STABLE_WINDOW_SIZE)
 last_stable = None
 
-# ==================== TEMPORIZADOR DE DESVIACIÓN (NUEVO) ====================
+# ==================== TEMPORIZADOR DE DESVIACIÓN ====================
 deviation_start_time = None
 last_incorrect_position = None
 deviation_timer = None

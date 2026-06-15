@@ -16,6 +16,7 @@ import com.indoora.app.data.repository.HomeRepository
 import com.indoora.app.data.repository.RoutineRepository
 import com.indoora.app.feature.activities.ActivitiesScreen
 import com.indoora.app.feature.activities.ActivitiesViewModel
+import com.indoora.app.feature.activities.ActivitiesViewModelFactory
 import com.indoora.app.feature.auth.AuthViewModel
 import com.indoora.app.feature.auth.AuthViewModelFactory
 import com.indoora.app.feature.auth.LoginScreen
@@ -29,6 +30,7 @@ import com.indoora.app.feature.profile.ProfileViewModel
 import com.indoora.app.feature.profile.ProfileViewModelFactory
 import com.indoora.app.feature.routines.RoutinesScreen
 import com.indoora.app.feature.routines.RoutinesViewModel
+import com.indoora.app.feature.routines.RoutinesViewModelFactory
 import com.indoora.app.feature.splash.SplashScreen
 import com.indoora.app.feature.training.TrainingScreen
 import com.indoora.app.feature.training.TrainingViewModel
@@ -204,7 +206,10 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         composable(Screen.Activities.route) { backStackEntry ->
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
             val activityRepository = ActivityRepository()
-            val viewModel = ActivitiesViewModel(activityRepository, homeRepository, homeId)
+            val homeRepository = HomeRepository()
+            val viewModel: ActivitiesViewModel = viewModel(
+                factory = ActivitiesViewModelFactory(activityRepository, homeRepository, homeId)
+            )
 
             val homeViewModel: HomeViewModel = viewModel(
                 factory = HomeViewModelFactory(homeRepository, mqttManager, context)
@@ -212,7 +217,7 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
 
             ActivitiesScreen(
                 viewModel = viewModel,
-                homeId = homeId,  // ← Añadir este parámetro
+                homeId = homeId,
                 onNavigateBack = { navController.popBackStack() },
                 onPublishConfigToMotor = { id ->
                     viewModel.viewModelScope.launch {
@@ -248,7 +253,9 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         composable(Screen.Routines.route) { backStackEntry ->
             val homeId = backStackEntry.arguments?.getString("homeId")?.toIntOrNull() ?: 0
             val routineRepository = RoutineRepository()
-            val viewModel = RoutinesViewModel(routineRepository, homeId)
+            val viewModel: RoutinesViewModel = viewModel(
+                factory = RoutinesViewModelFactory(routineRepository, homeId)
+            )
 
             val homeViewModel: HomeViewModel = viewModel(
                 factory = HomeViewModelFactory(homeRepository, mqttManager, context)

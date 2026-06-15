@@ -80,11 +80,16 @@ class HomeService:
     
     # ------------Position------------
 
-    def create_position(self, data: PositionCreate):
-        # ASociada a una room
+    def create_position(self, data: PositionCreate, current_user: User):
+        if not data.name or not data.name.strip():
+            raise HTTPException(400, "Position name cannot be empty")
+            
         room = self.repo.get_room_by_id(data.room_id)
         if not room:
             raise HTTPException(404, "Room not found")
+            
+        if room.home_id != current_user.home_id:
+            raise HTTPException(403, "This room does not belong to your home")
 
         return self.repo.create_position(data)
 
@@ -95,9 +100,11 @@ class HomeService:
         return pos
 
     def update_position(self, position_id: int, data: PositionUpdate):
+        # No se permite actualizar posiciones en la app
         return self.repo.update_position(position_id, data)
 
     def delete_position(self, position_id: int):
+        # No se permite eliminar posiciones en la app
         self.repo.delete_position(position_id)
 
     def get_positions_by_room_by_id(self, room_id: int):
@@ -105,7 +112,13 @@ class HomeService:
     
     # ------------Activity------------
 
-    def create_activity(self, data: ActivityCreate):
+    def create_activity(self, data: ActivityCreate, current_user: User):
+        if not data.name or not data.name.strip():
+            raise HTTPException(400, "Activity name cannot be empty")
+            
+        if data.home_id != current_user.home_id:
+            raise HTTPException(403, "You can only create activities for your own home")
+        
         return self.repo.create_activity(data)
 
     def get_activity_by_id(self, activity_id: int):
@@ -114,27 +127,49 @@ class HomeService:
             raise HTTPException(404, "Activity not found")
         return activity
 
-    def update_activity(self, activity_id: int, data: ActivityUpdate):
+    def update_activity(self, activity_id: int, data: ActivityUpdate, current_user: User):
+        # Validar que la actividad a actualizar pertenece al usuario
+        activity = self.repo.get_activity_by_id(activity_id)
+        if not activity:
+            raise HTTPException(404, "Activity not found")
+            
+        if activity.home_id != current_user.home_id:
+            raise HTTPException(403, "You can only update activities from your own home")
+
+        if not data.name or not data.name.strip():
+            raise HTTPException(400, "Activity name cannot be empty")
+            
         updated = self.repo.update_activity(activity_id, data)
-        
+
         if data.position_ids is not None:
             self.repo.update_activity_positions(activity_id, data.position_ids)
         
         return updated
 
-    def delete_activity(self, activity_id: int):
-        if not self.repo.get_activity_by_id(activity_id):
+    def delete_activity(self, activity_id: int, current_user: User):
+        activity = self.repo.get_activity_by_id(activity_id)
+        if not activity:
             raise HTTPException(404, "Activity not found")
+
+        if activity.home_id != current_user.home_id:
+            raise HTTPException(403, "You can only delete activities from your own home")
 
         self.repo.delete_activity(activity_id)
 
-    def get_activities_by_home_id(self, home_id: int):
+    def get_activities_by_home_id(self, home_id: int, current_user: User):
+        if home_id != current_user.home_id:
+            raise HTTPException(403, "You can only view activities from your own home")
+        
         return self.repo.get_activities_by_home_id(home_id)
     
-    def get_activity_with_positions(self, activity_id: int):
+    def get_activity_with_positions(self, activity_id: int, current_user: User):
         activity, position_ids = self.repo.get_activity_with_positions(activity_id)
         if not activity:
             raise HTTPException(404, "Activity not found")
+
+        if activity.home_id != current_user.home_id:
+            raise HTTPException(403, "You can only view activities from your own home")
+
         # Construimos el diccionario con los datos de la actividad más los position_ids
         result = activity.dict()
         result["position_ids"] = position_ids

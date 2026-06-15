@@ -15,5 +15,5 @@
     "timeout_seconds": 3,
     "umbral_confianza_habitacion": 0.40,
     "umbral_confianza_posicion": 0.00,
-    "deviation_timeout_seconds": 180
+    "deviation_timeout_seconds": 1800
 }

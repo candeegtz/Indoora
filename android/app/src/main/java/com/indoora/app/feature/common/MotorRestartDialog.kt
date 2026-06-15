@@ -32,16 +32,16 @@ fun MotorRestartDialog(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        "Para aplicar los cambios, debes reiniciar el motor de posicionamiento.",
+                        "Para aplicar los cambios, debes reiniciar el motor de localización.",
                         color = Color.White.copy(alpha = 0.9f)
                     )
                     Text(
-                        "Cuando el motor esté listo, pulsa 'Enviar configuración'.",
+                        "Cuando el motor esté listo, sincronice los datos pulsando el botor 'Sincronizar'.",
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 14.sp
                     )
                     Text(
-                        "Si el motor ha recibido la configuración, cierra esta pestaña. En otro caso, vuélvela a enviar.",
+                        "Si el motor ha recibido la configuración, cierra esta pestaña. En otro caso, pulsa el botón otra vez.",
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 14.sp
                     )
@@ -65,7 +65,7 @@ fun MotorRestartDialog(
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Enviar configuración", color = Color.White)
+                        Text("Sincronizar", color = Color.White)
                     }
                 }
             },
