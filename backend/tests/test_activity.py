@@ -4,8 +4,6 @@ from app.models.models import RoomType
 
 @pytest.fixture
 def setup_activity_data(client):
-    """Setup: crear supervisor, login, y home con rooms y positions"""
-    
     register_response = client.post(
         "/auth/register-supervisor",
         json={
@@ -78,7 +76,6 @@ def setup_activity_data(client):
 
 
 def test_create_activity_success(client, setup_activity_data):
-    """Test crear una actividad exitosamente"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -100,7 +97,6 @@ def test_create_activity_success(client, setup_activity_data):
 
 
 def test_create_activity_multiple_positions(client, setup_activity_data):
-    """Test crear actividad con múltiples posiciones"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -120,7 +116,6 @@ def test_create_activity_multiple_positions(client, setup_activity_data):
 
 
 def test_create_activity_unauthorized(client, setup_activity_data):
-    """Test crear actividad sin autenticación"""
     data = setup_activity_data
     
     response = client.post(
@@ -135,8 +130,24 @@ def test_create_activity_unauthorized(client, setup_activity_data):
     assert response.status_code == 401
 
 
+def test_create_activity_forbidden_wrong_home(client, setup_activity_data):
+    data = setup_activity_data
+    headers = {"Authorization": f"Bearer {data['token']}"}
+    
+    response = client.post(
+        "/activities/",
+        json={
+            "name": "Cocinar",
+            "homeId": data["home_id"] + 999,
+            "positionIds": [data["position1_id"]]
+        },
+        headers=headers
+    )
+    
+    assert response.status_code == 403
+
+
 def test_get_activities_by_home(client, setup_activity_data):
-    """Test obtener actividades por home"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -170,8 +181,19 @@ def test_get_activities_by_home(client, setup_activity_data):
     assert len(activities) >= 2
 
 
+def test_get_activities_by_home_forbidden(client, setup_activity_data):
+    data = setup_activity_data
+    headers = {"Authorization": f"Bearer {data['token']}"}
+    
+    response = client.get(
+        f"/activities/home/{data['home_id'] + 999}",
+        headers=headers
+    )
+    
+    assert response.status_code == 403
+
+
 def test_get_activity_with_positions(client, setup_activity_data):
-    """Test obtener actividad con sus posiciones asociadas"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -200,7 +222,6 @@ def test_get_activity_with_positions(client, setup_activity_data):
 
 
 def test_get_activity_not_found(client, setup_activity_data):
-    """Test obtener actividad que no existe"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -213,7 +234,6 @@ def test_get_activity_not_found(client, setup_activity_data):
 
 
 def test_update_activity_name(client, setup_activity_data):
-    """Test actualizar nombre de actividad"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -244,7 +264,6 @@ def test_update_activity_name(client, setup_activity_data):
 
 
 def test_update_activity_positions(client, setup_activity_data):
-    """Test actualizar posiciones de actividad"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -273,7 +292,6 @@ def test_update_activity_positions(client, setup_activity_data):
 
 
 def test_update_activity_name_and_positions(client, setup_activity_data):
-    """Test actualizar nombre y posiciones"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -304,7 +322,6 @@ def test_update_activity_name_and_positions(client, setup_activity_data):
 
 
 def test_delete_activity_success(client, setup_activity_data):
-    """Test eliminar actividad exitosamente"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -336,7 +353,6 @@ def test_delete_activity_success(client, setup_activity_data):
 
 
 def test_delete_activity_not_found(client, setup_activity_data):
-    """Test eliminar actividad que no existe"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -349,8 +365,6 @@ def test_delete_activity_not_found(client, setup_activity_data):
 
 
 def test_delete_activity_unauthorized(client, setup_activity_data):
-    """Test eliminar actividad sin autenticación"""
-    
     response = client.delete(
         "/activities/1"
     )
@@ -359,7 +373,6 @@ def test_delete_activity_unauthorized(client, setup_activity_data):
 
 
 def test_activity_lifecycle(client, setup_activity_data):
-    """Test ciclo completo: crear → leer → actualizar → eliminar"""
     data = setup_activity_data
     headers = {"Authorization": f"Bearer {data['token']}"}
     
@@ -405,3 +418,125 @@ def test_activity_lifecycle(client, setup_activity_data):
         headers=headers
     )
     assert final_response.status_code == 404
+
+def test_get_activity_with_positions_forbidden(client, setup_activity_data):
+    data = setup_activity_data
+    headers1 = {"Authorization": f"Bearer {data['token']}"}
+    
+    created = client.post(
+        "/activities/",
+        json={
+            "name": "Cocinar",
+            "homeId": data["home_id"],
+            "positionIds": [data["position1_id"]]
+        },
+        headers=headers1
+    ).json()
+    
+    client.post(
+        "/auth/register-supervisor",
+        json={
+            "username": "intruder_get",
+            "name": "Intruder",
+            "surnames": "User",
+            "email": "intruder_get@gmail.com",
+            "password": "123456",
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "Intruder Home"
+        }
+    )
+    token2 = client.post(
+        "/auth/login",
+        json={"username": "intruder_get", "password": "123456"}
+    ).json()["access_token"]
+    headers2 = {"Authorization": f"Bearer {token2}"}
+    
+    response = client.get(
+        f"/activities/{created['id']}",
+        headers=headers2
+    )
+    
+    assert response.status_code == 403
+
+
+def test_update_activity_forbidden_wrong_home(client, setup_activity_data):
+    data = setup_activity_data
+    headers1 = {"Authorization": f"Bearer {data['token']}"}
+    
+    created = client.post(
+        "/activities/",
+        json={
+            "name": "Cocinar",
+            "homeId": data["home_id"],
+            "positionIds": [data["position1_id"]]
+        },
+        headers=headers1
+    ).json()
+    
+    client.post(
+        "/auth/register-supervisor",
+        json={
+            "username": "intruder_update",
+            "name": "Intruder",
+            "surnames": "User",
+            "email": "intruder_upd@gmail.com",
+            "password": "123456",
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "Intruder Home"
+        }
+    )
+    token2 = client.post(
+        "/auth/login",
+        json={"username": "intruder_update", "password": "123456"}
+    ).json()["access_token"]
+    headers2 = {"Authorization": f"Bearer {token2}"}
+    
+    response = client.put(
+        f"/activities/{created['id']}",
+        json={
+            "name": "Intento Hack",
+        },
+        headers=headers2
+    )
+    
+    assert response.status_code == 403
+
+
+def test_delete_activity_forbidden_wrong_home(client, setup_activity_data):
+    data = setup_activity_data
+    headers1 = {"Authorization": f"Bearer {data['token']}"}
+    
+    created = client.post(
+        "/activities/",
+        json={
+            "name": "Cocinar",
+            "homeId": data["home_id"],
+            "positionIds": [data["position1_id"]]
+        },
+        headers=headers1
+    ).json()
+    
+    client.post(
+        "/auth/register-supervisor",
+        json={
+            "username": "intruder_delete",
+            "name": "Intruder",
+            "surnames": "User",
+            "email": "intruder_del@gmail.com",
+            "password": "123456",
+            "userType": "SUPERVISOR_CREATOR",
+            "homeName": "Intruder Home"
+        }
+    )
+    token2 = client.post(
+        "/auth/login",
+        json={"username": "intruder_delete", "password": "123456"}
+    ).json()["access_token"]
+    headers2 = {"Authorization": f"Bearer {token2}"}
+    
+    response = client.delete(
+        f"/activities/{created['id']}",
+        headers=headers2
+    )
+    
+    assert response.status_code == 403
