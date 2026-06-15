@@ -15,7 +15,7 @@ def create_activity(
     user = Depends(get_current_user)
 ):
     repo = HomeService(session)
-    return repo.create_activity(data)
+    return repo.create_activity(data, user)
 
 @router.get("/", response_model=list[ActivityRead])
 def get_all_activities(
@@ -34,7 +34,7 @@ def update_activity(
     user = Depends(get_current_user)
 ):
     repo = HomeService(session)
-    return repo.update_activity(activity_id, data)
+    return repo.update_activity(activity_id, data, user)
 
 
 @router.delete("/{activity_id}")
@@ -44,7 +44,7 @@ def delete_activity(
     user = Depends(get_current_user)
 ):
     repo = HomeService(session)
-    repo.delete_activity(activity_id)
+    repo.delete_activity(activity_id, user)
     return {"message": "Activity deleted successfully"}
 
 
@@ -55,7 +55,7 @@ def get_activities_by_home(
     current_user = Depends(get_current_user)
 ):
     service = HomeService(session)   
-    return service.get_activities_by_home_id(home_id)
+    return service.get_activities_by_home_id(home_id, current_user)
 
 @router.get("/{activity_id}", response_model=ActivityWithPositionsRead)
 def get_activity(
@@ -64,7 +64,5 @@ def get_activity(
     current_user = Depends(get_current_user)
 ):
     service = HomeService(session)
-    activity = service.get_activity_with_positions(activity_id)
-    if not activity:
-        raise HTTPException(404, "Activity not found")
+    activity = service.get_activity_with_positions(activity_id, current_user)
     return activity
