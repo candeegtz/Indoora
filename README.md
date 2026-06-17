@@ -39,7 +39,7 @@ Este proyecto implementa **Indoora**, un sistema integral de localización en in
 
 Puedes ver una demostración en vídeo sobre el funcionamiento de la aplicación móvil, el proceso de calibración guiado y la generación de alertas en tiempo real a través del siguiente enlace:
 
-🎬 **[Ver demostración en vídeo del proyecto]([ENLACE_A_LA_DEMO_AQUÍ](https://drive.google.com/file/d/1c3yiX-0JAudPuQMJrl5z9o3JMeUU2L1T/view?usp=sharing))**
+🎬 **[Ver demostración en vídeo del proyecto](https://drive.google.com/file/d/1c3yiX-0JAudPuQMJrl5z9o3JMeUU2L1T/view?usp=sharing)**
 
 ---
 
