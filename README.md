@@ -1,4 +1,4 @@
-# Indoora: Sistema de Localización Indoor y Gestión de Rutinas
+# 📡 Indoora: Sistema de Localización Indoor y Gestión de Rutinas
 
 Este proyecto implementa **Indoora**, un sistema integral de localización en interiores basado en dispositivos ESP32 y tecnología Bluetooth Low Energy (BLE), complementado con algoritmos de Machine Learning (XGBoost) para la predicción de la posición. A diferencia de un motor aislado, Indoora aporta una arquitectura cloud centralizada y una aplicación móvil para gestionar el entorno del hogar, entrenar el modelo de forma guiada, definir rutinas y generar alertas en tiempo real ante desviaciones en el comportamiento del usuario.
 
@@ -32,6 +32,16 @@ Este proyecto implementa **Indoora**, un sistema integral de localización en in
 - No se detecta señal del smartwatch por parte de los receptores ESP32 (el usuario sale de la vivienda o hay pérdida total de señal).
 
 *Las alertas se notifican de forma inmediata y simultánea a través de correos electrónicos y notificaciones integradas en la aplicación móvil de los supervisores.*
+
+---
+
+## 📱 Demo del proyecto
+
+Puedes ver una demostración en vídeo sobre el funcionamiento de la aplicación móvil, el proceso de calibración guiado y la generación de alertas en tiempo real a través del siguiente enlace:
+
+🎬 **[Ver demostración en vídeo del proyecto]([ENLACE_A_LA_DEMO_AQUÍ](https://drive.google.com/file/d/1c3yiX-0JAudPuQMJrl5z9o3JMeUU2L1T/view?usp=sharing))**
+
+---
 
 ## 🧪 Casos de uso
 
