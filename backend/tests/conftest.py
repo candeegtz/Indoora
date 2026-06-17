@@ -12,7 +12,7 @@ from app.database import get_session
 
 load_dotenv(".env")
 
-TEST_DATABASE_URL = os.getenv("DATABASE_URL_TEST", "sqlite:///test.db")
+TEST_DATABASE_URL = os.getenv("DATABASE_URL_TEST", "DATABASE_URL_TEST=postgresql://postgres:1234@localhost:5432/indoora_test")
 
 engine = create_engine(
     TEST_DATABASE_URL,
